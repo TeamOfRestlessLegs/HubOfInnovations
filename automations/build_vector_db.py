@@ -2,7 +2,7 @@
 Budowa bazy wektorowej (Chroma) z danych zebranych przez scraper.py.
 
 Wejście:  Baza_Innowacji/  (innowacje.csv, pliki.csv, <kategoria>/<innowacja>/opis.md, PDF-y)
-Wyjście:  ../ai-service/vector_db/  — kolekcja "innowacje", z której korzysta ai-service
+Wyjście:  ../Backend/ai-service/vector_db/  — kolekcja "innowacje", z której korzysta ai-service
 
 Co trafia do bazy:
   - opis.md każdej innowacji (pełna treść podstrony)
@@ -39,15 +39,16 @@ from pypdf import PdfReader
 
 HERE = Path(__file__).resolve().parent
 DATA_DIR = HERE / "Baza_Innowacji"
-DB_DIR = HERE.parent / "ai-service" / "vector_db"
+DB_DIR = HERE.parent / "Backend" / "ai-service" / "vector_db"
 CACHE_PATH = HERE / ".cache" / "embeddings.sqlite"
+TEXT_CACHE_PATH = HERE / ".cache" / "pdf_text.sqlite"
 ENV_PATH = HERE / ".env"
 
-COLLECTION = "innowacje"
-EMBEDDING_MODEL = "text-embedding-3-small"
+COLLECTION = "innowacje"                  # fragmenty (opisy + PDF-y) — dowody i cytaty
+PROFILE_COLLECTION = "innowacje_profile"  # 1 dokument na innowację — ranking "która innowacja"
+EMBEDDING_MODEL = "text-embedding-3-large"  # small słabo rozróżniał krótkie polskie zapytania
 API_KEY_ENV = "OPENAI_KEY"
-PRICE_PER_1M_TOKENS = 0.02  # USD, text-embedding-3-small
-
+PRICE_PER_1M_TOKENS = 0.13  # USD, text-embedding-3-large
 CHUNK_CHARS = 1200
 CHUNK_OVERLAP = 200
 MAX_CHUNK_TOKENS = 8000  # limit modelu to 8191
@@ -120,23 +121,59 @@ def make_chunks(pages):
     return [(p, c) for p, c in chunks if len(c.strip()) >= 40]
 
 
+BOILERPLATE = re.compile(
+    r'\**INNOWACJA WYBRANA DO UPOWSZECHNIANIA W RAMACH PROJEKTU\s*"?MAŁOPOLSKI INKUBATOR INNOWACJI SPOŁECZNYCH"?\**',
+    re.IGNORECASE,
+)
+
+
+def clean_description(text):
+    """opis.md bez szumu: linki, metadane scrapera (kategoria/źródło/data) i powtarzana formułka projektu."""
+    text = text.split("\n## Linki", 1)[0]
+    text = re.sub(r"^- (Kategoria|Źródło|Pobrano): .*$", "", text, flags=re.MULTILINE)
+    text = BOILERPLATE.sub("", text)
+    text = re.sub(r"^\s*>\s*$", "", text, flags=re.MULTILINE)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
 def read_description(innovation_dir):
     path = innovation_dir / "opis.md"
     if not path.exists():
         return None
-    text = path.read_text(encoding="utf-8")
-    return text.split("\n## Linki", 1)[0]  # sekcja z linkami to szum dla wyszukiwania
+    return clean_description(path.read_text(encoding="utf-8"))
 
 
-def read_pdf_pages(path):
+class TextCache:
+    """Cache tekstu wyciągniętego z PDF-ów (po hashu pliku) — przebudowa bazy nie czyta PDF-ów od nowa."""
+
+    def __init__(self, path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.db = sqlite3.connect(path)
+        self.db.execute("CREATE TABLE IF NOT EXISTS pdf_text (file_hash TEXT PRIMARY KEY, pages TEXT)")
+
+    def get(self, file_hash):
+        row = self.db.execute("SELECT pages FROM pdf_text WHERE file_hash = ?", (file_hash,)).fetchone()
+        return [tuple(p) for p in json.loads(row[0])] if row else None
+
+    def put(self, file_hash, pages):
+        self.db.execute("INSERT OR REPLACE INTO pdf_text VALUES (?, ?)", (file_hash, json.dumps(pages)))
+        self.db.commit()
+
+
+def read_pdf_pages(path, file_hash, text_cache):
+    cached = text_cache.get(file_hash)
+    if cached is not None:
+        return cached
     try:
         reader = PdfReader(str(path))
         if reader.is_encrypted:
             reader.decrypt("")
-        return [(i + 1, page.extract_text() or "") for i, page in enumerate(reader.pages)]
+        pages = [(i + 1, page.extract_text() or "") for i, page in enumerate(reader.pages)]
     except Exception as e:
         print(f"  [PDF pominięty] {path.name}: {e}")
-        return []
+        pages = []
+    text_cache.put(file_hash, pages)
+    return pages
 
 
 def truncate_tokens(text):
@@ -146,15 +183,26 @@ def truncate_tokens(text):
 
 # ---------------------------------------------------------------- zbieranie dokumentów
 
-def collect_chunks():
-    """Zwraca listę rekordów: id, text (do embeddingu i zapisu), metadata."""
+def make_record(record_id, text, metadata):
+    text = truncate_tokens(text)
+    return {
+        "id": record_id,
+        "text": text,
+        "hash": hashlib.sha256(f"{EMBEDDING_MODEL}\n{text}".encode("utf-8")).hexdigest(),
+        "metadata": metadata,
+    }
+
+
+def collect_records():
+    """Zwraca (fragmenty, profile). Rekord: id, text (do embeddingu i zapisu), hash, metadata."""
+    text_cache = TextCache(TEXT_CACHE_PATH)
     innovations = {(r["kategoria_slug"], r["innowacja_slug"]): r for r in read_csv(DATA_DIR / "innowacje.csv")}
     files_by_innovation = {}
     for row in read_csv(DATA_DIR / "pliki.csv"):
         if row["rodzaj"] in PDF_KINDS and row["pdf_czytelny"] == "tak" and row["sciezka_lokalna"]:
             files_by_innovation.setdefault((row["kategoria_slug"], row["innowacja_slug"]), []).append(row)
 
-    records = []
+    records, profiles = [], []
     for key, inn in innovations.items():
         innovation_id = f"{inn['kategoria_slug']}/{inn['innowacja_slug']}"
         base_meta = {
@@ -171,6 +219,14 @@ def collect_chunks():
         if description:
             sources.append(("opis", f"{inn['folder']}/opis.md", [(None, description)]))
 
+        # Profil: tytuł + kategoria + krótki opis + pełny opis ze strony — jeden wektor na innowację
+        profile_text = "\n".join(filter(None, [
+            inn["tytul"], f"Kategoria: {inn['kategoria']}", BOILERPLATE.sub("", inn["opis_krotki"]).strip(),
+        ]))
+        if description:
+            profile_text += "\n\n" + description
+        profiles.append(make_record(innovation_id, profile_text, {**base_meta, "zrodlo": "profil"}))
+
         seen_hashes = set()
         for row in files_by_innovation.get(key, []):
             path = DATA_DIR / row["sciezka_lokalna"]
@@ -181,17 +237,15 @@ def collect_chunks():
                 continue
             seen_hashes.add(file_hash)
             kind = "pdf_dowiedz_sie_wiecej" if row["rodzaj"] == "dowiedz_sie_wiecej" else "pdf_materialy"
-            sources.append((kind, row["sciezka_lokalna"], read_pdf_pages(path)))
+            sources.append((kind, row["sciezka_lokalna"], read_pdf_pages(path, file_hash, text_cache)))
 
         for kind, rel_path, pages in sources:
+            source_key = hashlib.sha1(rel_path.encode("utf-8")).hexdigest()[:10]
             for i, (page_no, chunk) in enumerate(make_chunks(pages)):
-                text = truncate_tokens(f"{header}\n\n{chunk}")
-                source_key = hashlib.sha1(rel_path.encode("utf-8")).hexdigest()[:10]
-                records.append({
-                    "id": f"{innovation_id}#{kind}:{source_key}:{i}",
-                    "text": text,
-                    "hash": hashlib.sha256(f"{EMBEDDING_MODEL}\n{text}".encode("utf-8")).hexdigest(),
-                    "metadata": {
+                records.append(make_record(
+                    f"{innovation_id}#{kind}:{source_key}:{i}",
+                    f"{header}\n\n{chunk}",
+                    {
                         **base_meta,
                         "zrodlo": kind,
                         "plik": rel_path,
@@ -199,9 +253,9 @@ def collect_chunks():
                         "strona": page_no or 0,
                         "chunk": i,
                     },
-                })
+                ))
         print(f"  {innovation_id}: {len(sources)} źródeł")
-    return records
+    return records, profiles
 
 
 # ---------------------------------------------------------------- embeddingi (z cache)
@@ -257,35 +311,38 @@ def embed_missing(records, cache):
 
 # ---------------------------------------------------------------- zapis do Chroma
 
-def write_collection(tmp_dir, records, vectors, result):
+def write_collections(tmp_dir, collections, vectors, result):
     """Uruchamiane w osobnym procesie: Chroma trzyma pliki otwarte do końca procesu,
     a na Windows nie da się przemianować katalogu z otwartymi plikami."""
     client = chromadb.PersistentClient(path=str(tmp_dir))
-    collection = client.create_collection(
-        COLLECTION,
-        embedding_function=OpenAIEmbeddingFunction(api_key_env_var=API_KEY_ENV, model_name=EMBEDDING_MODEL),
-        configuration={"hnsw": {"space": "cosine"}},
-        metadata={"embedding_model": EMBEDDING_MODEL, "zrodlo_danych": "rops.krakow.pl biblioteka innowacji"},
-    )
-    for i in range(0, len(records), 2000):
-        part = records[i:i + 2000]
-        collection.add(
-            ids=[r["id"] for r in part],
-            embeddings=[vectors[r["hash"]] for r in part],
-            documents=[r["text"] for r in part],
-            metadatas=[r["metadata"] for r in part],
+    total = 0
+    for name, records in collections.items():
+        collection = client.create_collection(
+            name,
+            embedding_function=OpenAIEmbeddingFunction(api_key_env_var=API_KEY_ENV, model_name=EMBEDDING_MODEL),
+            configuration={"hnsw": {"space": "cosine"}},
+            metadata={"embedding_model": EMBEDDING_MODEL, "zrodlo_danych": "rops.krakow.pl biblioteka innowacji"},
         )
-    result.value = collection.count()
+        for i in range(0, len(records), 2000):
+            part = records[i:i + 2000]
+            collection.add(
+                ids=[r["id"] for r in part],
+                embeddings=[vectors[r["hash"]] for r in part],
+                documents=[r["text"] for r in part],
+                metadatas=[r["metadata"] for r in part],
+            )
+        total += collection.count()
+    result.value = total
 
 
-def build_chroma(records, vectors):
+def build_chroma(collections, vectors):
     tmp_dir = DB_DIR.with_name(DB_DIR.name + "_tmp")
     if tmp_dir.exists():
         shutil.rmtree(tmp_dir)
     ctx = multiprocessing.get_context("spawn")
     result = ctx.Value("i", -1)
-    vectors = {r["hash"]: vectors[r["hash"]] for r in records}
-    process = ctx.Process(target=write_collection, args=(tmp_dir, records, vectors, result))
+    vectors = {r["hash"]: vectors[r["hash"]] for records in collections.values() for r in records}
+    process = ctx.Process(target=write_collections, args=(tmp_dir, collections, vectors, result))
     process.start()
     process.join()
     if process.exitcode != 0 or result.value < 0:
@@ -319,23 +376,24 @@ def main():
         sys.exit(f"Brak klucza {API_KEY_ENV} (w .env albo zmiennej środowiskowej).")
 
     print("Zbieranie i dzielenie tekstów...")
-    records = collect_chunks()
+    records, profiles = collect_records()
     cache = EmbeddingCache(CACHE_PATH)
-    cached = cache.get_many({r["hash"] for r in records})
-    new_texts = {r["hash"]: r["text"] for r in records if r["hash"] not in cached}
+    cached = cache.get_many({r["hash"] for r in records + profiles})
+    new_texts = {r["hash"]: r["text"] for r in records + profiles if r["hash"] not in cached}
     new_tokens = sum(len(ENCODER.encode(t)) for t in new_texts.values())
     innovations = len({r["metadata"]["innowacja_id"] for r in records})
     print(f"\nChunków: {len(records)} z {innovations} innowacji "
           f"(opisy: {sum(r['metadata']['zrodlo'] == 'opis' for r in records)}, "
-          f"PDF: {sum(r['metadata']['zrodlo'] != 'opis' for r in records)})")
+          f"PDF: {sum(r['metadata']['zrodlo'] != 'opis' for r in records)}), profili: {len(profiles)}")
     print(f"Do policzenia: {len(new_texts)} chunków, {new_tokens:,} tokenów "
           f"≈ ${new_tokens / 1e6 * PRICE_PER_1M_TOKENS:.2f}")
     if args.szacuj:
         return
 
-    vectors = embed_missing(records, cache)
-    count = build_chroma(records, vectors)
-    print(f"\nGotowe: kolekcja '{COLLECTION}' ({count} chunków) w {DB_DIR}")
+    vectors = embed_missing(records + profiles, cache)
+    count = build_chroma({COLLECTION: records, PROFILE_COLLECTION: profiles}, vectors)
+    print(f"\nGotowe: kolekcje '{COLLECTION}' ({len(records)}) i '{PROFILE_COLLECTION}' ({len(profiles)}), "
+          f"razem {count} dokumentów w {DB_DIR}")
 
 
 if __name__ == "__main__":
