@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Kolory i fonty z makiety. Używasz ich jak zwykłych klas Tailwinda:
+   bg-ink, text-teal, border-line, font-display itd. */
+@theme {
+  --color-ink: #14213D;      /* granat – tekst, ciemne tła */
+  --color-ground: #F5F7FA;   /* tło strony */
+  --color-line: #D8DEE7;     /* obramowania */
+  --color-muted: #4A5568;    /* tekst drugorzędny */
+  --color-teal: #0F6E5A;     /* główny akcent, przyciski */
+  --color-teal-dark: #0A4F41;
+  --color-teal-light: #E3F1EC;
+  --color-clay: #B4470F;     /* drugi akcent: pomysły, poparcia */
+  --color-clay-dark: #8A3A10;
+  --color-clay-light: #FBEBDD;
+
+  --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+}
+
+body {
+  @apply bg-ground text-ink font-sans text-[17px] leading-relaxed;
+}
