@@ -5,17 +5,14 @@ spring:
   application:
     name: oauth-service
   datasource:
-    url: jdbc:h2:mem:hubdb
-    username: sa
-    password: password
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://postgres:5432/${POSTGRES_DB:hubdb}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
-    database-platform: org.hibernate.dialect.H2Dialect
-  h2:
-    console:
-      enabled: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
 
 google:
   client-id: ${GOOGLE_CLIENT_ID}
