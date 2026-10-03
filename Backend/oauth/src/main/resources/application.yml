@@ -1,0 +1,26 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: oauth-service
+  datasource:
+    url: jdbc:h2:mem:hubdb
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+google:
+  client-id: ${GOOGLE_CLIENT_ID:5694015240-5ndv0guj4f988ddih33rh61640uubb98.apps.googleusercontent.com}
+
+jwt:
+  secret: ${JWT_SECRET:HackYeah2026SuperTajnyKluczDoGenerowaniaTokenowZebyBylBezpieczny123!}
+  expiration: ${JWT_EXPIRATION:86400000}
