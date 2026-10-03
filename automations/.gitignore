@@ -2,3 +2,4 @@
 __pycache__/
 Baza_Innowacji/
 .env
+.cache/
