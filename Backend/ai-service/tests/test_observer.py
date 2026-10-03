@@ -40,11 +40,15 @@ def c():
 def test_status(c):
     s = c.get("/observer/status").json()
     assert s["communes"] > 100 and s["indicators"] > 0 and s["vector_index"] is True
+    assert s["coverage"] == "województwo małopolskie"
 
 
-def test_obszary(c):
+def test_obszary_z_oznaczeniem_braku_danych(c):
     obszary = {a["key"]: a for a in c.get("/observer/areas").json()}
-    assert "starzenie_sie" in obszary and obszary["starzenie_sie"]["indicators_with_data"] > 0
+    assert obszary["starzenie_sie"]["has_data"] is True and obszary["starzenie_sie"]["note"] == ""
+    bez_danych = [a for a in obszary.values() if not a["has_data"]]
+    assert {a["key"] for a in bez_danych} >= {"samotnosc"}
+    assert all(a["indicators_with_data"] == 0 and a["note"] for a in bez_danych)
 
 
 def test_gminy_filtry(c):
@@ -60,6 +64,8 @@ def test_gmina_ze_wskaznikami(c):
     assert g["name"] == "Tarnów" and g["type"] == "wiejska"
     z_wartoscia = [w for w in g["indicators"] if w["value"] is not None]
     assert z_wartoscia and all(w["year"] and w["source"] for w in z_wartoscia)
+    f = g["data_freshness"]
+    assert f["max_age_days"] == 90 and isinstance(f["stale"], bool) and f["message"]
 
 
 def test_skala_problemu(c):
@@ -67,6 +73,7 @@ def test_skala_problemu(c):
     assert s["no_data"] is False and s["indicators"]
     brak = c.get(f"/observer/communes/{TARNOW_WIEJSKA}/scale", params={"area": "samotnosc"}).json()
     assert brak["no_data"] is True and "Brak danych" in brak["message"]
+    assert "data_freshness" in s and "data_freshness" in brak
 
 
 def test_podobne_gminy(c):
@@ -95,6 +102,7 @@ def test_szukaj_wskaznikow_dla_gminy(c):
     r = c.post("/observer/indicators/search",
                json={"query": "ludzie starsi samotni", "commune_id": TARNOW_WIEJSKA, "limit": 3}).json()
     assert r["results"] and all(h["value"]["value"] is not None for h in r["results"])
+    assert all(h["indicator_id"] for h in r["results"])   # ten sam identyfikator co w wyszukiwaniu bez gminy
 
 
 @wektory

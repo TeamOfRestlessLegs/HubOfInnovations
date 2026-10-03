@@ -9,6 +9,8 @@ from model.observer import (
     IndicatorSearchResponse, ObserverStatus, ProblemScale,
 )
 
+# Dane z Internetowego Obserwatora Statystyk Społecznych ROPS Kraków – zasięg: tylko województwo małopolskie.
+# Ranking: miejsce 1 = największa skala problemu w regionie.
 observerRoute = APIRouter(prefix="/observer", tags=["observer"])
 
 CommuneId = Annotated[int, Path(ge=1)]
@@ -25,13 +27,14 @@ def _unavailable(e: SearchUnavailable) -> HTTPException:
 
 @observerRoute.get("/status", response_model=ObserverStatus)
 async def observerStatus(observer: Observer) -> ObserverStatus:
-    """Ile gmin, wskaźników i wartości jest w bazie i czy jest indeks wektorowy."""
+    """Ile gmin, wskaźników i wartości jest w bazie, czy jest indeks wektorowy i jaki jest zasięg danych (Małopolska)."""
     return ObserverStatus(**await observer.status())
 
 
 @observerRoute.get("/areas", response_model=list[Area])
 async def listAreas(observer: Observer) -> list[Area]:
-    """Obszary wyzwań (Dane/config/obszary_wyzwan.yaml) z liczbą wskaźników, które mają dane."""
+    """Obszary wyzwań (Dane/config/obszary_wyzwan.yaml). has_data=false: brak wskaźników gminnych w Obserwatorze –
+    obszar zostaje na liście (to wyzwania z Mapy ROPS), a `note` mówi, skąd wziąć liczby."""
     return [Area(**a) for a in await observer.areas()]
 
 

@@ -35,8 +35,18 @@ class IndicatorValue(BaseModel):
     source: str
 
 
+class DataFreshness(BaseModel):
+    """Kiedy pobrano z Obserwatora wartości w odpowiedzi. stale=true: najstarsze starsze niż max_age_days albo data nieznana."""
+    downloaded_from: str | None
+    downloaded_to: str | None
+    max_age_days: int
+    stale: bool
+    message: str | None
+
+
 class CommuneDetails(Commune):
     indicators: list[IndicatorValue]
+    data_freshness: DataFreshness
 
 
 class ProblemScale(BaseModel):
@@ -46,6 +56,7 @@ class ProblemScale(BaseModel):
     no_data: bool
     message: str
     indicators: list[IndicatorValue]
+    data_freshness: DataFreshness
 
 
 class Area(BaseModel):
@@ -53,6 +64,8 @@ class Area(BaseModel):
     name: str
     description: str
     indicators_with_data: int
+    has_data: bool              # false: Obserwator nie ma wskaźników przypisanych do obszaru – pokaż to przed wyborem
+    note: str                   # niepusta przy has_data=false: skąd wziąć liczby i że pomoże wyszukiwanie po opisie
 
 
 class ObserverStatus(BaseModel):
@@ -61,6 +74,7 @@ class ObserverStatus(BaseModel):
     values: int
     vector_index: bool
     embedding_model: str
+    coverage: str               # zasięg danych – tylko Małopolska (gminy spoza regionu nie mają danych)
 
 
 class IndicatorSearchRequest(BaseModel):
@@ -71,7 +85,7 @@ class IndicatorSearchRequest(BaseModel):
 
 
 class IndicatorHit(BaseModel):
-    indicator_id: int | None    # id wskaźnika w Obserwatorze (wyszukiwanie bez gminy)
+    indicator_id: int | None    # id wskaźnika w Obserwatorze
     code: str | None            # ustawiony, gdy wskaźnik jest w Dane/config/wskazniki.yaml
     name: str
     category: str

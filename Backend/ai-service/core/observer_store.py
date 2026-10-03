@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from datetime import date
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -12,6 +13,9 @@ class CommuneNotFound(Exception):
 
 class SearchUnavailable(Exception):
     """Wyszukiwanie wektorowe nie działa: brak indeksu albo pakietów sqlite-vec / sentence-transformers."""
+
+
+COVERAGE = "województwo małopolskie"   # Obserwator ROPS Kraków obejmuje tylko gminy i powiaty Małopolski
 
 
 class ObserverStore:
@@ -105,15 +109,29 @@ class ObserverStore:
                 "values": db.execute("SELECT COUNT(*) FROM wartosci").fetchone()[0],
                 "vector_index": index,
                 "embedding_model": self._wektory.nazwa_modelu(),
+                "coverage": COVERAGE,
             }
 
     def _areas(self) -> list[dict]:
         with self._magazyn() as m:
-            return [
-                {"key": k, "name": o.get("nazwa", k), "description": o.get("opis", ""),
-                 "indicators_with_data": self._wektory.liczba_wskaznikow_obszaru(k, m)}
-                for k, o in self._obszary().items()
-            ]
+            wynik = []
+            for k, o in self._obszary().items():
+                n = self._wektory.liczba_wskaznikow_obszaru(k, m)
+                wynik.append({"key": k, "name": o.get("nazwa", k), "description": o.get("opis", ""),
+                              "indicators_with_data": n, "has_data": n > 0,
+                              "note": "" if n else self._wektory.UWAGA_BRAK_DANYCH})
+            return wynik
+
+    def _freshness(self, wartosci) -> dict:
+        """Wiek danych z Obserwatora (daty pobrania wartości) i ostrzeżenie, gdy najstarsze mają > 90 dni."""
+        daty = sorted(w.pobrano for w in wartosci if w.pobrano and w.wartosc is not None)
+        wiek = (date.today() - date.fromisoformat(daty[0])).days if daty else None
+        return {
+            "downloaded_from": daty[0] if daty else None, "downloaded_to": daty[-1] if daty else None,
+            "max_age_days": self._api.DNI_AKTUALNOSCI,
+            "stale": wiek is None or wiek > self._api.DNI_AKTUALNOSCI,
+            "message": self._api.ostrzezenie_o_aktualnosci([w for w in wartosci if w.wartosc is not None]),
+        }
 
     def _communes(self, search, county, type_) -> list[dict]:
         with self._magazyn() as m:
@@ -128,7 +146,8 @@ class ObserverStore:
         with self._magazyn() as m:
             g = self._gmina(m, commune_id)
             wskazniki = self._api.wskazniki_gminy(commune_id, m)
-        return {**self._commune_dict(g), "indicators": [self._indicator_dict(w) for w in wskazniki]}
+        return {**self._commune_dict(g), "indicators": [self._indicator_dict(w) for w in wskazniki],
+                "data_freshness": self._freshness(wskazniki)}
 
     def _problem_scale(self, commune_id: int, area: str) -> dict:
         with self._magazyn() as m:
@@ -137,6 +156,7 @@ class ObserverStore:
         return {
             "commune": self._commune_dict(s.gmina), "area": s.obszar, "area_name": s.nazwa_obszaru,
             "no_data": s.brak_danych, "message": s.komunikat, "indicators": [self._indicator_dict(w) for w in s.wskazniki],
+            "data_freshness": self._freshness(s.wskazniki),
         }
 
     def _similar_communes(self, commune_id: int, limit: int) -> list[dict]:
@@ -162,8 +182,8 @@ class ObserverStore:
                         for t in trafienia]
             self._gmina(m, commune_id)
             trafienia = self._vector(lambda: self._api.wskazniki_dla_problemu(query, commune_id, k=limit, magazyn=m))
-            return [{"indicator_id": None, "code": t.wartosc.kod, "name": t.wartosc.nazwa, "category": "",
-                     "levels": t.wartosc.poziom, "has_values": True, "score": t.podobienstwo,
+            return [{"indicator_id": t.id_w_obserwatorze, "code": t.wartosc.kod, "name": t.wartosc.nazwa,
+                     "category": "", "levels": t.wartosc.poziom, "has_values": True, "score": t.podobienstwo,
                      "value": self._indicator_dict(t.wartosc)}
                     for t in trafienia]
 
