@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { innowacje } from '../data/innowacje.js'
+import { useDane } from '../data/DaneContext.jsx'
 
 const podpowiedzi = ['transport dla seniorów', 'wykluczenie cyfrowe', 'samotność osób starszych', 'opieka wytchnieniowa']
 
@@ -123,7 +123,8 @@ function KartaRoli({ to, tytul, opis, link, akcent = false }) {
 
 // Ilustracja "splotu": zgłoszenie mieszkańca → dopasowana innowacja
 function PodgladDopasowania() {
-  const przyklad = innowacje.find((i) => i.tytul === 'Mobilny Sąsiad')
+  const przyklad = useDane().biblioteka.find((i) => i.tytul === 'Mobilny Sąsiad')
+  if (!przyklad) return null
   return (
     <div aria-hidden="true" className="flex-[1_1_380px] min-w-0">
       <div className="bg-white border border-line rounded-2xl px-5 py-4 shadow-[0_2px_0_#D8DEE7]">

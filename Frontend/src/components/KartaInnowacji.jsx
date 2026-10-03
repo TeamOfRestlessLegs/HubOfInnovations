@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import PasekEtapu from './PasekEtapu.jsx'
 
-// Dane przychodzą jako "props" – jeden obiekt innowacji z data/innowacje.js
+// Dane przychodzą jako "props" – jedna fiszka (data/fiszki.js / DaneContext)
 export default function KartaInnowacji({ innowacja }) {
   // useState: zmienna, której zmiana sama odświeża widok
   const [poparte, setPoparte] = useState(false)
@@ -13,6 +13,7 @@ export default function KartaInnowacji({ innowacja }) {
         <p className="text-sm font-bold text-teal">{innowacja.tagi.join(' · ')}</p>
         <h3 className="font-display text-xl font-bold">{innowacja.tytul}</h3>
         <p className="text-sm text-muted">pow. {innowacja.powiat}</p>
+        {innowacja.problem && <p className="text-[15px] text-muted mt-1">{innowacja.problem}</p>}
       </div>
 
       {/* Renderowanie warunkowe: pokaż tylko, jeśli projekt czegoś szuka */}

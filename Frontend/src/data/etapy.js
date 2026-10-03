@@ -4,5 +4,4 @@ export const ETAPY = [
   { nr: 2, nazwa: 'Prototyp', opis: 'Pierwsza wersja, wymaga testów.' },
   { nr: 3, nazwa: 'Przetestowane', opis: 'Sprawdzone z prawdziwymi użytkownikami.' },
   { nr: 4, nazwa: 'Gotowe do wdrożenia', opis: 'Można uruchomić w nowym miejscu.' },
-  {nr: 5, nazwa: 'Aktualne'}
 ]
