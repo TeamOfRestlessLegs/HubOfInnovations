@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     vector_db_path: Path = SERVICE_DIR / "vector_db"  # VECTOR_DB_PATH
     collection: str = "innowacje"  # COLLECTION — fragmenty
     profiles_collection: str = "innowacje_profile"  # PROFILES_COLLECTION — 1 dokument na innowację
+    splot_dane_dir: Path = SERVICE_DIR.parents[1] / "Dane"  # SPLOT_DANE_DIR — pakiet splot_dane (Obserwator)
+    observer_db_path: Path | None = None  # OBSERVER_DB_PATH — domyślnie Dane/data/obserwator.sqlite
 
 
 @lru_cache

@@ -235,6 +235,7 @@ class WskaznikProblemu:
     podobienstwo: float
     wartosc: WartoscWskaznika
     w_konfiguracji: bool       # czy wskaźnik jest w config/wskazniki.yaml (wtedy znany jest kierunek oceny)
+    id_w_obserwatorze: int | None = None
 
 
 def wskazniki_dla_problemu(opis: str, gmina_id: int, k: int = 5, min_podobienstwo: float = 0.0,
@@ -254,7 +255,7 @@ def wskazniki_dla_problemu(opis: str, gmina_id: int, k: int = 5, min_podobienstw
         w = m.db.execute("SELECT * FROM wskazniki WHERE id = ?", (t.wskaznik_id,)).fetchone()
         wartosc = _wartosc_dla(m, w, g)
         if wartosc.wartosc is not None:
-            wynik.append(WskaznikProblemu(t.podobienstwo, wartosc, w["kod"] is not None))
+            wynik.append(WskaznikProblemu(t.podobienstwo, wartosc, w["kod"] is not None, t.id_w_obserwatorze))
     return wynik
 
 
