@@ -7,7 +7,6 @@
 target/
 build/
 .gradle/
-out/
 !gradle/wrapper/gradle-wrapper.jar
 
 # IDE configuration (IntelliJ IDEA, VS Code)
