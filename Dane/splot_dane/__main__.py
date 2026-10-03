@@ -55,6 +55,9 @@ def polecenie_scrape(args) -> int:
     for b in raport.bledy:
         print(f"  UWAGA: {b}")
     print(f"Zapisano data/wartosci.csv. Zapytań do serwisu: {klient.liczba_zapytan} (reszta z data/raw/).")
+    if not args.odswiez:
+        print("Dane z data/raw/ nie wygasają same – aby pobrać aktualne wartości z serwisu: "
+              "python -m splot_dane scrape --odswiez")
     return 0
 
 
@@ -74,12 +77,17 @@ def polecenie_szukaj(args) -> int:
     from splot_dane.wektory import szukaj_wskaznikow, zaproponuj_obszar
 
     with Magazyn() as m:
-        obszary = zaproponuj_obszar(args.opis, 3, m)
-        print("Obszar wyzwania (propozycja): " + "; ".join(f"{o.nazwa} [{o.klucz}] {o.podobienstwo:.2f}" for o in obszary))
+        print("Obszar wyzwania (propozycja):")
+        for o in zaproponuj_obszar(args.opis, 3, m):
+            dane = f"{o.liczba_wskaznikow} wskaźn. z danymi" if o.ma_dane else "BRAK DANYCH w Obserwatorze"
+            print(f"  {o.podobienstwo:.2f}  {o.nazwa} [{o.klucz}] – {dane}")
+            if o.uwaga:
+                print(f"        {o.uwaga}")
         print()
         g = _wybierz_gmine(args.gmina, args.typ, m) if args.gmina else None
         if args.gmina and g is None:
             return 1
+        pokazane = []
         for t in szukaj_wskaznikow(args.opis, k=args.k, tylko_gminne=args.gminne, magazyn=m):
             poziom = "gminy" if t.gminny else ("powiaty" if "powiaty" in t.poziomy else "tylko województwo")
             dane = "dane w bazie" if t.ma_wartosci else "brak danych w bazie"
@@ -88,8 +96,12 @@ def polecenie_szukaj(args) -> int:
                 w = m.db.execute("SELECT * FROM wskazniki WHERE id = ?", (t.wskaznik_id,)).fetchone()
                 wart = api._wartosc_dla(m, w, g)
                 if wart.wartosc is not None:
+                    pokazane.append(wart)
                     print(f"        {wart.jednostka_terytorialna}: {z_jednostka(wart.wartosc, wart.jednostka)} ({wart.rok}), "
                           f"średnia {z_jednostka(wart.srednia_wojewodztwa, wart.jednostka)}")
+        if pokazane:
+            print(f"\nŚrednia: {pokazane[0].metoda_sredniej}.")
+            print(api.ostrzezenie_o_aktualnosci(pokazane))
     return 0
 
 
@@ -132,7 +144,9 @@ def polecenie_gmina(args) -> int:
             print(f"{(w.obszar_wyzwania or ''):<18} {w.nazwa[:46]:<46} {w.rok or '–':>4} "
                   f"{z_jednostka(w.wartosc, w.jednostka):>10} {z_jednostka(w.srednia_wojewodztwa, w.jednostka):>10} "
                   f"{miejsce:>9} {zm:>14}  {w.opis_porownania or 'brak danych'}{dopisek}")
-        print("\nMiejsce: 1 = największa skala problemu. Średnia: nieważona średnia gmin (przy danych powiatu – powiatów).")
+        print("\nMiejsce: 1 = największa skala problemu. Średnia: nieważona średnia gmin (przy danych powiatu – powiatów),"
+              " każda jednostka liczy się tak samo, bez ważenia liczbą mieszkańców.")
+        print(api.ostrzezenie_o_aktualnosci([w for w in wskazniki if w.wartosc is not None]))
         podobne = api.podobne_gminy(g.id, 3, m)
         if podobne:
             print("Podobne gminy: " + "; ".join(p.opis for p in podobne))

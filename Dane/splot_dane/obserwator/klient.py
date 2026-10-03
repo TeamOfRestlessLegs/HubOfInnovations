@@ -121,6 +121,15 @@ class KlientObserwatora:
     def nazwy_plikow_csv(id_wskaznika: int, rok: int) -> tuple[str, str]:
         return (f"wartosci/{id_wskaznika}_{rok}_gminy.csv", f"wartosci/{id_wskaznika}_{rok}_powiaty.csv")
 
+    def data_pobrania(self, id_wskaznika: int, rok: int) -> str | None:
+        """Data (ISO) zapisania odpowiedzi w data/raw/ – czyli kiedy dane naprawdę pobrano z serwisu."""
+        from datetime import date
+
+        sciezka = self.katalog_raw / self.nazwy_plikow_csv(id_wskaznika, rok)[1]
+        if not sciezka.exists():
+            return None
+        return date.fromtimestamp(sciezka.stat().st_mtime).isoformat()
+
     def jest_w_pamieci(self, id_wskaznika: int, rok: int) -> bool:
         return not self.odswiez and all(
             (self.katalog_raw / n).exists() for n in self.nazwy_plikow_csv(id_wskaznika, rok)

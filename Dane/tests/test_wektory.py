@@ -65,3 +65,9 @@ def test_wskazniki_dla_problemu_tylko_z_danymi(indeks):
     wyniki = api.wskazniki_dla_problemu("seniorzy 60+ i migracja", tarnow.id, k=3, magazyn=indeks)
     assert [w.wartosc.nazwa for w in wyniki] == ["Ludność w wieku 60+"]     # saldo migracji nie ma danych w bazie
     assert wyniki[0].wartosc.wartosc == 23.97 and wyniki[0].wartosc.rok == 2024
+
+
+def test_obszar_bez_danych_ma_uwage(indeks):
+    obszary = {o.klucz: o for o in wektory.zaproponuj_obszar("seniorzy, osoby starsze", k=7, magazyn=indeks)}
+    assert obszary["starzenie_sie"].ma_dane and not obszary["starzenie_sie"].uwaga      # 60+ ma dane w bazie
+    assert not obszary["samotnosc"].ma_dane and "nie ma wskaźników" in obszary["samotnosc"].uwaga

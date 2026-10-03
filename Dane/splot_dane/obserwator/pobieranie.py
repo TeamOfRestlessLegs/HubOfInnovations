@@ -105,7 +105,12 @@ def wczytaj_tabele(magazyn: Magazyn, wskaznik_id: int, rok: int, gminy: TabelaCs
 
 def _pobierz_rok(klient, magazyn, wskaznik_id, id_obs, rok) -> WynikWczytania:
     surowe_gminy, surowe_powiaty = klient.eksport_csv(id_obs, rok)
-    return wczytaj_tabele(magazyn, wskaznik_id, rok, parsuj_csv(surowe_gminy), parsuj_csv(surowe_powiaty))
+    wynik = wczytaj_tabele(magazyn, wskaznik_id, rok, parsuj_csv(surowe_gminy), parsuj_csv(surowe_powiaty))
+    pobrano = klient.data_pobrania(id_obs, rok)
+    if pobrano:
+        magazyn.zapisz_pobranie(wskaznik_id, rok, pobrano)
+        magazyn.zatwierdz()
+    return wynik
 
 
 def _ma_gminy(w: WynikWczytania) -> bool:

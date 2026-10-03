@@ -67,6 +67,30 @@ class WartoscWskaznika:
     opis_wskaznika: str = ""
     adres: str = ""
     szczegoly: dict = field(default_factory=dict)   # licznik/mianownik z Obserwatora, np. {"ludność 60+": 6351}
+    metoda_sredniej: str = ""            # jak liczono średnią (nieważona – każda jednostka liczy się tak samo)
+    pobrano: str | None = None           # kiedy dane pobrano z Obserwatora (ISO); None = nieznane (przed `scrape`)
+
+
+SREDNIA_GMIN = "nieważona średnia gmin województwa (każda gmina liczy się tak samo, bez ważenia liczbą mieszkańców)"
+SREDNIA_POWIATOW = "nieważona średnia powiatów województwa (każdy powiat liczy się tak samo)"
+DNI_AKTUALNOSCI = 90
+
+
+def ostrzezenie_o_aktualnosci(wartosci: list["WartoscWskaznika"], dni: int = DNI_AKTUALNOSCI,
+                              dzis: "date | None" = None) -> str | None:
+    """Komunikat o wieku danych: najstarsza data pobrania i ostrzeżenie, gdy ma ponad `dni` dni."""
+    from datetime import date
+
+    daty = sorted(w.pobrano for w in wartosci if w.pobrano)
+    if not daty:
+        return "Data pobrania danych nieznana – uruchom: python -m splot_dane scrape"
+    najstarsza = date.fromisoformat(daty[0])
+    wiek = ((dzis or date.today()) - najstarsza).days
+    komunikat = f"Dane pobrane z Obserwatora: {daty[0]}" + (f" – {daty[-1]}" if daty[-1] != daty[0] else "")
+    if wiek > dni:
+        komunikat += (f". UWAGA: najstarsze dane mają {wiek} dni – serwis mógł je zaktualizować; "
+                      "odśwież: python -m splot_dane scrape --odswiez")
+    return komunikat
 
 
 @dataclass
@@ -185,6 +209,7 @@ def _wartosc_dla(m: Magazyn, w, g: Gmina) -> WartoscWskaznika:
             **wspolne, wartosc=r["wartosc"], rok=r["rok"], srednia_wojewodztwa=st.srednia,
             miejsce_w_rankingu=st.miejsce, liczba_gmin=st.liczba_jednostek, zmiana=zm, rok_porownania=rok_p,
             opis_porownania=st.opis, poziom=POZIOM_GMINA, jednostka_terytorialna=g.nazwa,
+            metoda_sredniej=SREDNIA_GMIN, pobrano=m.data_pobrania(w["id"], r["rok"]),
             szczegoly=json.loads(r["szczegoly"] or "{}"))
     # zapas: dane powiatu, do którego należy gmina
     r = db.execute(
@@ -197,6 +222,7 @@ def _wartosc_dla(m: Magazyn, w, g: Gmina) -> WartoscWskaznika:
             **wspolne, wartosc=r["wartosc"], rok=r["rok"], srednia_wojewodztwa=st.srednia,
             miejsce_w_rankingu=st.miejsce, liczba_gmin=st.liczba_jednostek, zmiana=zm, rok_porownania=rok_p,
             opis_porownania=st.opis, poziom=POZIOM_POWIAT, jednostka_terytorialna=f"powiat {g.powiat}",
+            metoda_sredniej=SREDNIA_POWIATOW, pobrano=m.data_pobrania(w["id"], r["rok"]),
             szczegoly=json.loads(r["szczegoly"] or "{}"))
     return WartoscWskaznika(
         **wspolne, wartosc=None, rok=None, srednia_wojewodztwa=None, miejsce_w_rankingu=None, liczba_gmin=0,

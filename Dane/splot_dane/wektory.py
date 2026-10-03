@@ -170,6 +170,17 @@ class TrafienieObszaru:
     klucz: str
     nazwa: str
     podobienstwo: float
+    liczba_wskaznikow: int = 0   # wskaźniki z config/wskazniki.yaml przypisane do obszaru, z danymi w bazie
+    uwaga: str = ""              # niepusta, gdy obszar nie ma danych statystycznych w Obserwatorze
+
+    @property
+    def ma_dane(self) -> bool:
+        return self.liczba_wskaznikow > 0
+
+
+UWAGA_BRAK_DANYCH = ("Obserwator nie ma wskaźników dla tego obszaru – liczby do wniosku trzeba wziąć z innego źródła "
+                     "(raport, badanie, dane ośrodka pomocy społecznej); pasujące wskaźniki mogą się jednak znaleźć "
+                     "w wyszukiwaniu po opisie problemu.")
 
 
 def _sprawdz_indeks(m: Magazyn) -> None:
@@ -209,8 +220,20 @@ def szukaj_wskaznikow(opis: str, k: int = 8, tylko_z_danymi_lokalnymi: bool = Fa
     return wynik
 
 
+def liczba_wskaznikow_obszaru(klucz: str, magazyn: Magazyn) -> int:
+    """Ile wskaźników z konfiguracji przypisanych do obszaru ma w bazie jakiekolwiek wartości (gminne lub powiatowe)."""
+    return magazyn.db.execute(
+        """SELECT COUNT(*) FROM wskazniki w WHERE w.obszar_wyzwania = ? AND (
+               EXISTS(SELECT 1 FROM wartosci x WHERE x.wskaznik_id = w.id AND x.wartosc IS NOT NULL)
+               OR EXISTS(SELECT 1 FROM wartosci_powiatow x WHERE x.wskaznik_id = w.id AND x.wartosc IS NOT NULL))""",
+        (klucz,)).fetchone()[0]
+
+
 def zaproponuj_obszar(opis: str, k: int = 3, magazyn: Magazyn | None = None) -> list[TrafienieObszaru]:
-    """Obszary wyzwań (config/obszary_wyzwan.yaml) najbliższe opisowi problemu."""
+    """Obszary wyzwań (config/obszary_wyzwan.yaml) najbliższe opisowi problemu.
+
+    Przy każdym obszarze: ile ma wskaźników z danymi; obszar bez danych dostaje `uwaga`, żeby użytkownik wiedział
+    o tym przed wyborem, a nie dopiero przy szukaniu liczb do wniosku."""
     m = polacz(magazyn or Magazyn())
     _sprawdz_indeks(m)
     obszary = wczytaj_obszary()
@@ -218,4 +241,9 @@ def zaproponuj_obszar(opis: str, k: int = 3, magazyn: Magazyn | None = None) -> 
     wiersze = m.db.execute(
         """SELECT o.klucz, v.distance FROM wektory_obszarow v JOIN obszary_indeksu o ON o.obszar_nr = v.obszar_nr
            WHERE v.embedding MATCH ? AND k = ? ORDER BY v.distance""", (zapytanie, k)).fetchall()
-    return [TrafienieObszaru(kl, (obszary.get(kl) or {}).get("nazwa", kl), round(1 - d, 4)) for kl, d in wiersze]
+    wynik = []
+    for kl, d in wiersze:
+        n = liczba_wskaznikow_obszaru(kl, m)
+        wynik.append(TrafienieObszaru(kl, (obszary.get(kl) or {}).get("nazwa", kl), round(1 - d, 4), n,
+                                      "" if n else UWAGA_BRAK_DANYCH))
+    return wynik

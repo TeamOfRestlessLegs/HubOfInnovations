@@ -58,6 +58,14 @@ CREATE TABLE IF NOT EXISTS wartosci_powiatow (
     szczegoly    TEXT,
     UNIQUE (wskaznik_id, powiat, rok)
 );
+
+-- kiedy dane danego wskaźnika i roku faktycznie pobrano z Obserwatora (data pliku w data/raw/)
+CREATE TABLE IF NOT EXISTS pobrania (
+    wskaznik_id  INTEGER NOT NULL REFERENCES wskazniki(id),
+    rok          INTEGER NOT NULL,
+    pobrano      TEXT NOT NULL,              -- data ISO, np. 2026-10-03
+    UNIQUE (wskaznik_id, rok)
+);
 """
 
 
@@ -162,8 +170,19 @@ class Magazyn:
             (wskaznik_id, powiat, rok, wartosc, json.dumps(szczegoly or {}, ensure_ascii=False)),
         )
 
+    def zapisz_pobranie(self, wskaznik_id: int, rok: int, pobrano: str) -> None:
+        self.db.execute(
+            """INSERT INTO pobrania (wskaznik_id, rok, pobrano) VALUES (?,?,?)
+               ON CONFLICT (wskaznik_id, rok) DO UPDATE SET pobrano=excluded.pobrano""",
+            (wskaznik_id, rok, pobrano),
+        )
+
+    def data_pobrania(self, wskaznik_id: int, rok: int) -> str | None:
+        r = self.db.execute("SELECT pobrano FROM pobrania WHERE wskaznik_id = ? AND rok = ?", (wskaznik_id, rok)).fetchone()
+        return r[0] if r else None
+
     def liczba_wierszy(self, tabela: str) -> int:
-        assert tabela in {"gminy", "wskazniki", "wartosci", "wartosci_powiatow"}
+        assert tabela in {"gminy", "wskazniki", "wartosci", "wartosci_powiatow", "pobrania"}
         return self.db.execute(f"SELECT COUNT(*) FROM {tabela}").fetchone()[0]
 
     # --- eksport -------------------------------------------------------------
