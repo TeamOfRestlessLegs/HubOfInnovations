@@ -1,0 +1,22 @@
+# Słowa kluczowe kategorii Obserwatora – dopisywane do tekstu każdego wskaźnika w indeksie wektorowym
+# (python -m splot_dane indeks). Pomagają dopasować opis problemu pisany potocznie
+# („wieś się wyludnia”, „seniorzy”) do wskaźników o technicznych nazwach.
+# Po zmianie uruchom ponownie: python -m splot_dane indeks
+kategorie:
+  Ludność: demografia, struktura wieku, starzenie się społeczności, seniorzy, osoby starsze, najstarsi mieszkańcy, dzieci, urodzenia, zgony, wyludnianie, depopulacja
+  Mobilność: migracje, wyjazdy i przyjazdy, odpływ mieszkańców, młodzi wyjeżdżają, wyludnianie, depopulacja, emigracja
+  Gospodarstwa domowe: dochody i wydatki rodzin, ubóstwo, bieda, warunki życia, osoby mieszkające samotnie
+  Rodzina: rodziny z dziećmi, rodziny wielodzietne, dzieci na utrzymaniu
+  Pomoc społeczna - kadra: pracownicy socjalni, ośrodek pomocy społecznej (OPS), obciążenie pracowników, dostęp do pomocy
+  Pomoc społeczna - powody korzystania: przyczyny korzystania z pomocy społecznej, problemy społeczne mieszkańców
+  Pomoc społeczna - beneficjenci: osoby korzystające z pomocy społecznej, klienci OPS, domy pomocy społecznej (DPS), opieka nad osobami starszymi
+  Pomoc społeczna - świadczenia: zasiłki, usługi opiekuńcze, opieka w domu, dożywianie, wsparcie materialne
+  Pomoc społeczna i otoczenie - infrastruktura: placówki wsparcia, dzienne domy, kluby seniora, uniwersytety trzeciego wieku, schroniska, dostęp do usług społecznych
+  Piecza zastępcza: rodziny zastępcze, dzieci poza rodziną biologiczną, domy dziecka, usamodzielnienie młodzieży
+  Zdrowie: zdrowie, choroby, szpitale, apteki, dostęp do lekarza, zdrowie psychiczne, uzależnienia
+  Niepełnosprawność: osoby z niepełnosprawnościami, orzeczenie o niepełnosprawności, osoby niesłyszące i niewidome, poruszający się na wózku, ograniczona mobilność, dostępność
+  Wynagrodzenia, emerytury i renty: zarobki, emeryci, renciści, dochody seniorów
+  Kultura: biblioteki, domy kultury, czytelnictwo, oferta kulturalna, dostęp do kultury
+  Edukacja: przedszkola, szkoły, wyniki egzaminów, młodzież, uczniowie, studenci
+  Rynek pracy: bezrobocie, brak pracy, zatrudnienie, aktywność zawodowa, osoby 50+ na rynku pracy
+  Budżety gmin: wydatki gminy, finansowanie oświaty, kultury i pomocy społecznej

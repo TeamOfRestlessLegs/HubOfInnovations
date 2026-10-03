@@ -1,0 +1,66 @@
+# Wskaźniki pobierane domyślnie przez `python -m splot_dane scrape`.
+# id_w_obserwatorze = liczba z adresu https://obserwator.rops.krakow.pl/differenceanalysis/<id>
+# (pełna lista: data/katalog_wskaznikow.csv po `python -m splot_dane katalog`).
+# wyzej_znaczy_gorzej: true, gdy wyższa wartość oznacza większą skalę problemu.
+#
+# Obszary BEZ wskaźnika (brak sensownego wskaźnika gminnego w Obserwatorze):
+#   zdrowie_psychiczne – „Osoby z zaburzeniami psychicznymi i uzależnione” (136) jest tylko
+#                        w analizie trendów (województwo); wskaźnik 228 to bezwzględna liczba
+#                        osób korzystających z usług, nie miara skali problemu.
+#   samotnosc          – dane o gospodarstwach domowych (np. jednoosobowych) są tylko wojewódzkie.
+#   wykluczenie_cyfrowe – Obserwator nie ma wskaźników dostępu do internetu ani kompetencji cyfrowych.
+
+lata:
+  wstecz: 5          # drugi pobierany rok: najnowszy minus 5 (albo najbliższy dostępny)
+
+wskazniki:
+  - kod: ludnosc_60_plus
+    id_w_obserwatorze: 257
+    obszar_wyzwania: starzenie_sie
+    wyzej_znaczy_gorzej: true
+    uzasadnienie: Udział osób 60+ w ludności to podstawowa miara skali starzenia się gminy, dostępna dla wszystkich gmin od 2007 r.
+
+  - kod: podwojne_starzenie
+    id_w_obserwatorze: 273
+    obszar_wyzwania: starzenie_sie
+    wyzej_znaczy_gorzej: true
+    uzasadnienie: Udział osób 80+ wśród osób 60+ pokazuje, jak duża jest grupa najstarszych, najczęściej potrzebujących opieki i pomocy w codziennym funkcjonowaniu.
+
+  - kod: potencjal_pielegnacyjny
+    id_w_obserwatorze: 268
+    obszar_wyzwania: starzenie_sie
+    wyzej_znaczy_gorzej: false
+    uzasadnienie: Liczba kobiet 45–64 (potencjalnych opiekunek rodzinnych) na 100 osób 80+ mierzy zasoby opieki rodzinnej – im niżej, tym większa luka opiekuńcza.
+
+  - kod: przyrost_naturalny
+    id_w_obserwatorze: 91
+    obszar_wyzwania: depopulacja
+    wyzej_znaczy_gorzej: false
+    uzasadnienie: Przyrost naturalny na 1000 mieszkańców to jedyny gminny wskaźnik ruchu ludności w Obserwatorze (saldo migracji nie ma układu gminnego); wartość ujemna oznacza ubytek ludności.
+
+  - kod: mieszkancy_na_pracownika_socjalnego
+    id_w_obserwatorze: 27
+    obszar_wyzwania: dostep_do_uslug
+    wyzej_znaczy_gorzej: true
+    uzasadnienie: Liczba mieszkańców na jednego pracownika socjalnego OPS pokazuje obciążenie i dostępność gminnych usług pomocy społecznej.
+
+  - kod: dostepnosc_aptek
+    id_w_obserwatorze: 2
+    obszar_wyzwania: dostep_do_uslug
+    wyzej_znaczy_gorzej: true
+    uzasadnienie: Liczba osób na jedną aptekę ogólnodostępną to gminny wskaźnik fizycznej dostępności podstawowej usługi zdrowotnej.
+
+  - kod: pomoc_z_powodu_niepelnosprawnosci
+    id_w_obserwatorze: 37
+    obszar_wyzwania: niepelnosprawnosc
+    wyzej_znaczy_gorzej: true
+    uzasadnienie: Odsetek klientów pomocy społecznej wspieranych z powodu niepełnosprawności to jedyny gminny wskaźnik dotyczący niepełnosprawności (pośredni – opisuje klientów OPS, nie całą populację).
+
+  # Wyjątek: wskaźnik tylko POWIATOWY (NSP 2021, tabela gminna w Obserwatorze jest pusta).
+  # Dodany, bo to jedyna bezpośrednia miara skali niepełnosprawności; we wniosku
+  # pojawia się z wyraźną adnotacją „dane dla powiatu”.
+  - kod: niepelnosprawni_ogolem
+    id_w_obserwatorze: 215
+    obszar_wyzwania: niepelnosprawnosc
+    wyzej_znaczy_gorzej: true
+    uzasadnienie: Odsetek osób z niepełnosprawnością (prawną lub biologiczną) w ludności wg NSP 2021 – bezpośrednia miara wielkości grupy docelowej, dostępna tylko dla powiatów.
