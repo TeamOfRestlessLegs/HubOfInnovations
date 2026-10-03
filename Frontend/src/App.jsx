@@ -5,12 +5,14 @@ import Home from './pages/Home.jsx'
 import Matchmaking from './pages/Matchmaking.jsx'
 import Innowacje from './pages/Innowacje.jsx'
 import Kreator from './pages/Kreator.jsx'
-import Canva from './pages/Canva.jsx'
 import Zasobnik from './pages/Zasobnik.jsx'
+import ZasobnikObszar from './pages/ZasobnikObszar.jsx'
+import Wniosek from './pages/Wniosek.jsx'
 import Logowanie from './pages/Logowanie.jsx'
+import Panel from './pages/Panel.jsx'
 
 // Lista stron. Nowa strona = nowy plik w pages/ + jedna linijka tutaj.
-// Strony, które coś zapisują (kreator, canva), wymagają logowania.
+// Strony, które coś zapisują (kreator, panel, wniosek), wymagają logowania.
 export default function App() {
   return (
     <>
@@ -20,9 +22,11 @@ export default function App() {
         <Route path="/szukaj" element={<Matchmaking />} />
         <Route path="/innowacje" element={<Innowacje />} />
         <Route path="/zasobnik" element={<Zasobnik />} />
+        <Route path="/zasobnik/:id" element={<ZasobnikObszar />} />
         <Route path="/logowanie" element={<Logowanie />} />
         <Route path="/kreator" element={<WymagaLogowania><Kreator /></WymagaLogowania>} />
-        <Route path="/canva" element={<WymagaLogowania><Canva /></WymagaLogowania>} />
+        <Route path="/panel" element={<WymagaLogowania><Panel /></WymagaLogowania>} />
+        <Route path="/wniosek/:fiszkaId/:naborId" element={<WymagaLogowania><Wniosek /></WymagaLogowania>} />
       </Routes>
     </>
   )

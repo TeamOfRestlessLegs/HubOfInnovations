@@ -4,15 +4,19 @@ import { useAuth, ROLE } from '../auth/AuthContext.jsx'
 
 const linki = [
   { to: '/szukaj', label: 'Znajdź rozwiązanie' },
-  { to: '/innowacje', label: 'Innowacje w toku' },
-  { to: '/kreator', label: 'Kreator pomysłów' },
   { to: '/zasobnik', label: 'Zasobnik wiedzy' },
+  { to: '/innowacje', label: 'Pomysły mieszkańców' },
+  { to: '/kreator', label: 'Kreator pomysłów' },
 ]
 
+// Nazwa panelu zależy od roli
+const NAZWA_PANELU = { resident: 'Moje sprawy', rops_admin: 'Panel ROPS' }
+
 export default function Header() {
+  const { uzytkownik } = useAuth()
   return (
     <header className="bg-white border-b border-line">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-8 gap-y-3">
+      <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
         <Link to="/" className="flex items-center gap-2.5 text-ink no-underline">
           <Logo />
           <span className="font-display font-extrabold text-lg leading-none">
@@ -27,7 +31,7 @@ export default function Header() {
               key={l.to}
               to={l.to}
               className={({ isActive }) =>
-                'px-3.5 py-3 rounded-lg font-bold no-underline ' +
+                'px-3 py-3 rounded-lg font-bold no-underline whitespace-nowrap ' +
                 (isActive ? 'bg-teal-light text-teal-dark' : 'text-ink hover:bg-ground')
               }
             >
@@ -36,7 +40,20 @@ export default function Header() {
           ))}
         </nav>
 
-        <Konto />
+        <div className="flex items-center gap-2">
+          {uzytkownik && (
+            <NavLink
+              to="/panel"
+              className={({ isActive }) =>
+                'min-h-11 px-4 inline-flex items-center rounded-lg font-bold no-underline border-2 border-clay ' +
+                (isActive ? 'bg-clay text-white' : 'text-clay-dark hover:bg-clay-light')
+              }
+            >
+              {NAZWA_PANELU[uzytkownik.rola]}
+            </NavLink>
+          )}
+          <Konto />
+        </div>
       </div>
     </header>
   )
@@ -60,7 +77,7 @@ function Konto() {
       <button
         onClick={() => setOtwarte(!otwarte)}
         aria-expanded={otwarte}
-        className="flex items-center gap-2.5 min-h-11 pl-1.5 pr-3.5 rounded-full border border-line hover:bg-ground"
+        className="flex items-center gap-2.5 min-h-11 p-1.5 2xl:pr-3.5 rounded-full border border-line hover:bg-ground"
       >
         {uzytkownik.zdjecie ? (
           // no-referrer: bez tego zdjęcia z Google czasem się nie ładują
@@ -70,7 +87,8 @@ function Konto() {
             {uzytkownik.imie?.[0]}
           </span>
         )}
-        <span className="text-left leading-tight">
+        <span className="sr-only">Konto: {uzytkownik.imie}</span>
+        <span aria-hidden="true" className="hidden 2xl:block text-left leading-tight">
           <span className="block font-bold text-[15px]">{uzytkownik.imie}</span>
           <span className="block text-xs text-muted">{ROLE[uzytkownik.rola]}</span>
         </span>
@@ -78,7 +96,11 @@ function Konto() {
 
       {otwarte && (
         <div className="absolute right-0 mt-2 w-64 bg-white border border-line rounded-xl shadow-lg p-3 flex flex-col gap-2 z-10">
-          <p className="text-sm text-muted px-1 break-all">{uzytkownik.email}</p>
+          <div className="px-1">
+            <p className="font-bold">{uzytkownik.imie}</p>
+            <p className="text-sm text-muted">{ROLE[uzytkownik.rola]}</p>
+            <p className="text-sm text-muted break-all">{uzytkownik.email}</p>
+          </div>
 
           {zmienRoleDemo && (
             <label className="flex flex-col gap-1 px-1 text-sm font-bold">

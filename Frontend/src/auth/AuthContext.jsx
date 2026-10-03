@@ -15,10 +15,10 @@ const AuthContext = createContext(null)
 const KLUCZ = 'splot-uzytkownik'
 const API = import.meta.env.VITE_API_URL
 
+// Dwie role: użytkownik (mieszkaniec, NGO, urzędnik – każdy, kto zgłasza) i ROPS = administrator
 export const ROLE = {
-  resident: 'Mieszkaniec',
-  jst_official: 'Urzędnik JST',
-  rops_admin: 'Koordynator ROPS',
+  resident: 'Użytkownik',
+  rops_admin: 'ROPS (administrator)',
 }
 
 // Token Google (JWT) = trzy części oddzielone kropkami; środkowa to dane profilu

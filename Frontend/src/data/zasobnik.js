@@ -1,28 +1,15 @@
-// Dane do Zasobnika wiedzy – przykładowe, do podmiany na API / panel admina ROPS.
-// `poziom` 1–3 = ile zgłoszonych wyzwań (do kolorowania mapy). [placeholdery]
+// Powiaty Małopolski – do wyboru miejsca problemu w Kreatorze i filtrów.
 export const powiaty = [
-  { nazwa: 'oświęcimski', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'chrzanowski', poziom: 2, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'olkuski', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'miechowski', poziom: 2, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'proszowicki', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'wadowicki', poziom: 2, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'krakowski', poziom: 3, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'wielicki', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'bocheński', poziom: 2, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'tarnowski', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'suski', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'myślenicki', poziom: 3, wyzwania: ['Starzenie się mieszkańców', 'Wykluczenie transportowe', 'Wykluczenie cyfrowe seniorów'] },
-  { nazwa: 'limanowski', poziom: 2, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'nowosądecki', poziom: 3, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'gorlicki', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'nowotarski', poziom: 2, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-  { nazwa: 'tatrzański', poziom: 1, wyzwania: ['[wyzwanie z Mapy Wyzwań]'] },
-]
+  'bocheński', 'brzeski', 'chrzanowski', 'dąbrowski', 'gorlicki', 'krakowski', 'limanowski', 'miechowski',
+  'myślenicki', 'nowosądecki', 'nowotarski', 'olkuski', 'oświęcimski', 'proszowicki', 'suski', 'tarnowski',
+  'tatrzański', 'wadowicki', 'wielicki', 'Kraków', 'Nowy Sącz', 'Tarnów',
+].map((nazwa) => ({ nazwa }))
 
+// Materiały edukacyjne – ogólne (raporty per obszar są w data/obszary.js).
+// Docelowo ROPS dodaje je w panelu (GET /api/materialy).
 export const materialy = [
-  { id: 1, typ: 'Raport', tytul: '[Kondycja Małopolski – raport ROPS]', opis: '[Krótki opis raportu]' },
-  { id: 2, typ: 'Poradnik', tytul: '[Jak zacząć innowację społeczną]', opis: '[Krótki opis poradnika]' },
-  { id: 3, typ: 'Szablon', tytul: 'Social Innovation Canvas (PDF)', opis: 'Trzy arkusze do prototypowania pomysłu – to samo co w Kreatorze.' },
-  { id: 4, typ: 'Film', tytul: '[Webinar: wykluczenie cyfrowe]', opis: '[Krótki opis materiału]' },
+  { id: 'm1', typ: 'Narzędzie', tytul: 'Social Innovation Canvas', opis: 'Trzy arkusze do prototypowania pomysłu. W Splocie wypełnisz je online jako pierwszy krok wniosku – gdy ROPS ogłosi nabór.', url: '/kreator', wewnetrzny: true },
+  { id: 'm2', typ: 'Raport', tytul: 'Mapa Wyzwań Społecznych', opis: 'Osiem obszarów: definicje, dane, kluczowe wyzwania i persony. ROPS Kraków, Dział Innowacji Społecznych.', url: '#' },
+  { id: 'm3', typ: 'Poradnik', tytul: '[Jak zacząć innowację społeczną]', opis: '[Materiał ROPS – do uzupełnienia przez administratora]', url: '#' },
+  { id: 'm4', typ: 'Film', tytul: '[Webinar ROPS o testowaniu w mikroskali]', opis: '[Materiał ROPS – do uzupełnienia przez administratora]', url: '#' },
 ]

@@ -176,3 +176,34 @@ export const CANVA = [
 
 // Płaska lista wszystkich sekcji – przydaje się do nawigacji "dalej / wstecz"
 export const SEKCJE = CANVA.flatMap((a) => a.sekcje.map((s) => ({ ...s, arkusz: a.arkusz })))
+
+// ── Pomocniki ──────────────────────────────────────────────
+
+// Czy na pytanie jest już jakaś odpowiedź
+export const odpowiedziano = (pytanie, wartosc) => {
+  if (pytanie.typ === 'lista') return (wartosc || []).length > 0
+  if (pytanie.typ === 'tekst') return (wartosc || '').trim().length > 0
+  return wartosc !== undefined && wartosc !== null && wartosc !== ''
+}
+
+export const sekcjaGotowa = (sekcja, odpowiedzi) => sekcja.pytania.every((p) => odpowiedziano(p, odpowiedzi[p.id]))
+export const brakujaceSekcje = (odpowiedzi) => SEKCJE.filter((s) => !sekcjaGotowa(s, odpowiedzi))
+
+// Canva na start wypełniona tym, co już wiemy z fiszki – użytkownik nie odpowiada drugi raz na te same pytania
+export function canvaZFiszki(f) {
+  const CZESTOTLIWOSC_Z_FISZKI = { codziennie: 'bardzo-czesto', czesto: 'czesto', czasami: 'czasami', rzadko: 'rzadko' }
+  const GRUPA_Z_FISZKI = {
+    'mieszkańcy wsi': 'mieszkańcy konkretnego miejsca',
+    'cała społeczność lokalna': 'mieszkańcy konkretnego miejsca',
+  }
+  const opcjeUzytkownika = SEKCJE.find((s) => s.id === 'odbiorcy').pytania.find((p) => p.id === 'uzytkownik').opcje
+  const uzytkownik = [...new Set((f.grupy || []).map((g) => GRUPA_Z_FISZKI[g] || g).filter((g) => opcjeUzytkownika.includes(g)))]
+
+  return {
+    intensywnosc: f.intensywnosc,
+    czestotliwosc: CZESTOTLIWOSC_Z_FISZKI[f.czestotliwosc],
+    skala: f.skala,
+    etap: f.etap,
+    ...(uzytkownik.length ? { uzytkownik } : {}),
+  }
+}
