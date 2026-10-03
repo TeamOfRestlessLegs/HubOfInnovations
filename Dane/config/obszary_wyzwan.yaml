@@ -1,0 +1,34 @@
+# UWAGA: lista ROBOCZA – obszary wyzwań do uzgodnienia z zespołem Hubu (ROPS Kraków).
+# Klucz obszaru jest używany w config/wskazniki.yaml (pole obszar_wyzwania)
+# i w sprawach (przyklady/sprawa*.json, pole "obszar").
+# slowa_kluczowe – potoczne określenia problemu; trafiają do indeksu wektorowego (python -m splot_dane indeks),
+#                  żeby opis z fiszki („młodzi wyjeżdżają”) wskazywał właściwy obszar.
+obszary:
+  starzenie_sie:
+    nazwa: Starzenie się społeczności
+    opis: Rosnący udział osób starszych i najstarszych, zapotrzebowanie na opiekę.
+    slowa_kluczowe: seniorzy, osoby starsze, emeryci, najstarsi mieszkańcy, opieka nad starszymi, opiekunowie rodzinni
+  zdrowie_psychiczne:
+    nazwa: Zdrowie psychiczne
+    opis: Kryzysy psychiczne, depresja, dostęp do wsparcia psychologicznego.
+    slowa_kluczowe: depresja, kryzys psychiczny, psycholog, psychiatra, lęk, myśli samobójcze, uzależnienia, stres
+  samotnosc:
+    nazwa: Samotność
+    opis: Osamotnienie i izolacja społeczna, zwłaszcza osób starszych.
+    slowa_kluczowe: osoby samotne, mieszkają same, brak kontaktu z ludźmi, izolacja, brak bliskich, wykluczenie towarzyskie
+  wykluczenie_cyfrowe:
+    nazwa: Wykluczenie cyfrowe
+    opis: Brak dostępu do technologii cyfrowych lub umiejętności korzystania z nich.
+    slowa_kluczowe: internet, komputer, smartfon, e-usługi, załatwianie spraw online, brak umiejętności cyfrowych
+  dostep_do_uslug:
+    nazwa: Dostęp do usług
+    opis: Dostępność usług społecznych, zdrowotnych i publicznych w gminie.
+    slowa_kluczowe: daleko do lekarza, apteki, urzędu, sklepu; brak transportu, dojazd, kolejki, brak pracownika socjalnego
+  depopulacja:
+    nazwa: Depopulacja
+    opis: Ubytek ludności, ujemny przyrost naturalny, odpływ mieszkańców.
+    slowa_kluczowe: wyludnianie się wsi, młodzi wyjeżdżają, emigracja, mało urodzeń, pustoszejące miejscowości
+  niepelnosprawnosc:
+    nazwa: Niepełnosprawność
+    opis: Sytuacja osób z niepełnosprawnościami i ich opiekunów.
+    slowa_kluczowe: osoby na wózku, niesłyszący, głusi, niewidomi, bariery architektoniczne, dostępność, opiekunowie osób z niepełnosprawnościami

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "splot-dane"
+version = "0.1.0"
+description = "Splot (HackYeah): dane z Obserwatora Statystyk Społecznych ROPS Kraków i przykładowe wypełnianie wniosków grantowych"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+llm = ["anthropic>=1.0"]   # tylko dla flagi --llm
+pdf = ["reportlab>=4", "pypdf>=4", "pdfplumber>=0.11"]   # wpisanie wniosku w oryginalny wzór PDF
+wektory = ["sqlite-vec>=0.1.6", "sentence-transformers>=3"]   # indeks wektorowy (model lokalny, ~0,5 GB z PyTorch)
+wzory = ["pypdf>=4"]       # odczyt PDF w `wniosek zaproponuj-szablon` (bez tego: program pdftotext)
+
+[tool.setuptools.packages.find]
+include = ["splot_dane*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

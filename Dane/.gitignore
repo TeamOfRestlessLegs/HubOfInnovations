@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+.env
+.idea/workspace.xml
+data/obserwator.sqlite-journal
+
+# surowe odpowiedzi serwisu (~32 MB) – odtwarzane przez `katalog` i `scrape`
+data/raw/
+ewaluacja/wyniki/
+/.idea
