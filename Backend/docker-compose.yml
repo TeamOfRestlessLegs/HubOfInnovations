@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  oauth:
+    build: ./oauth
+    container_name: identity-service
+    ports:
+      - "${OAUTH_PORT}:${OAUTH_INTERNAL_PORT}"
+    networks:
+      - hubofinnovations-network
+    environment:
+      - SERVER_PORT=${OAUTH_INTERNAL_PORT}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+
+networks:
+  hubofinnovations-network:
+    driver: bridge

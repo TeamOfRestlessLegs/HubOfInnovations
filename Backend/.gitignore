@@ -1,0 +1,25 @@
+# Environment variables and secrets
+.env
+.env.*
+*.env
+
+# Compiled files and build directories (Maven/Gradle)
+target/
+build/
+.gradle/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE configuration (IntelliJ IDEA, VS Code)
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Application logs
+*.log
+logs/
+
+# System files
+.DS_Store
+Thumbs.db
