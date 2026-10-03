@@ -10,7 +10,7 @@ import pl.hackathon.hubofinnovations.oauth.domain.port.in.AuthenticateGoogleUser
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -20,12 +20,16 @@ public class AuthController {
     public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody GoogleLoginRequest request) {
         log.info("Received Google login attempt");
 
-        var result = authenticateUseCase.authenticate(request.idToken());
+        var result = authenticateUseCase.authenticate(request.credential());
 
         log.info("User logged in successfully: {}", result.user().email());
+
         return ResponseEntity.ok(new AuthResponse(
-                result.internalJwt(),
-                result.user().role().name()
+                result.user().id().toString(),
+                result.user().name(),
+                result.user().email(),
+                result.user().role().name().toLowerCase(),
+                result.internalJwt()
         ));
     }
 }

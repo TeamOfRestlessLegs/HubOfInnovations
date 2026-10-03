@@ -17,8 +17,8 @@ public class AuthService implements AuthenticateGoogleUserUseCase {
 
     @Override
     public AuthResult authenticate(String googleIdToken) {
-
         var googleInfo = googleVerifier.verifyAndGetInfo(googleIdToken);
+
         if (googleInfo == null) {
             throw new IllegalArgumentException("Invalid or expired Google token");
         }
@@ -30,7 +30,6 @@ public class AuthService implements AuthenticateGoogleUserUseCase {
                 });
 
         String token = jwtGenerator.generate(user);
-
         return new AuthResult(token, user);
     }
 }
