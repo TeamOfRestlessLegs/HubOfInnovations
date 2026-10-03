@@ -23,6 +23,7 @@
 
     <modules>
         <module>oauth</module>
+        <module>innovations</module>
     </modules>
 
     <dependencyManagement>
