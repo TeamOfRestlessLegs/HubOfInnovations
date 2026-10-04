@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     analysis_model: str = "gpt-4.1-mini"  # ANALYSIS_MODEL — model do analiz innowacji
     analysis_db_path: Path = SERVICE_DIR / "data" / "analyses.sqlite"  # ANALYSIS_DB_PATH — cache analiz
     observer_db_path: Path | None = None  # OBSERVER_DB_PATH — domyślnie Dane/data/obserwator.sqlite
+    middleman_model: str = "gpt-4o-mini"  # MIDDLEMAN_MODEL — model OpenAI piszący plany wdrożenia
+    assistant_model: str = "gpt-4o-mini"  # ASSISTANT_MODEL — model OpenAI asystenta wniosku
 
 
 @lru_cache

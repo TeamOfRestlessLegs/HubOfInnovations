@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
-import { useDane } from '../data/DaneContext.jsx'
+import { useDane, STATUSY_WDROZENIA } from '../data/DaneContext.jsx'
 import { OBSZARY, obszarPoId } from '../data/obszary.js'
 import { powiaty } from '../data/zasobnik.js'
 
@@ -9,11 +9,12 @@ import { powiaty } from '../data/zasobnik.js'
 // prowadzi pomysły i śledzi ranking potrzeb mieszkańców.
 export default function PanelJST() {
   const { uzytkownik: ja, ustawProfil } = useAuth()
-  const { fiszki, zgloszenia, biblioteka } = useDane()
+  const { fiszki, zgloszenia, wdrozenia } = useDane()
 
   const powiat = ja.powiat || powiaty[0].nazwa
   const mojeWyzwania = zgloszenia.filter((z) => z.zrodlo === 'jst' && z.autorId === ja.id)
   const prowadzone = fiszki.filter((f) => f.prowadzacy?.id === ja.id)
+  const mojeWdrozenia = wdrozenia.filter((w) => w.gminaId === ja.id).sort((a, b) => b.zmieniono.localeCompare(a.zmieniono))
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-10">
@@ -31,9 +32,35 @@ export default function PanelJST() {
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3.5 mb-10">
-        <Kafel nazwa="Innowacje w katalogu ROPS" liczba={biblioteka.length} link="/zasobnik?dzial=biblioteka" />
+        <Kafel nazwa="Do wdrożenia" liczba={mojeWdrozenia.length} link="/zasobnik?dzial=biblioteka" />
         <Kafel nazwa="Zgłoszone wyzwania" liczba={mojeWyzwania.length} />
       </div>
+
+      <section className="mb-10">
+        <div className="flex flex-wrap justify-between items-end gap-3 mb-4">
+          <div>
+            <h2 className="font-display font-bold text-2xl mb-1">Do wdrożenia</h2>
+            <p className="text-muted text-[15px]">Innowacje z Biblioteki ROPS i pomysły mieszkańców, które zapisaliście. Middleman przygotuje plan pod Wasz budżet i zespół.</p>
+          </div>
+          <Link to="/zasobnik?dzial=biblioteka" className="min-h-11 px-4 inline-flex items-center rounded-lg border-2 border-ink font-bold no-underline text-ink">Szukaj w Bibliotece →</Link>
+        </div>
+        {mojeWdrozenia.length === 0 && <p className="text-muted">Nic jeszcze nie zapisaliście. W Bibliotece Innowacji albo w wątku pomysłu użyj „Zapisz” lub „Dopasuj do naszej gminy”.</p>}
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
+          {mojeWdrozenia.map((w) => (
+            <li key={w.id}>
+              <Link to={'/wdrozenie/' + w.id} className="h-full flex flex-col gap-1.5 bg-white border border-line rounded-2xl px-5 py-4 no-underline text-ink hover:border-ink">
+                <span className="text-xs font-bold text-muted uppercase">{w.zasob.typ === 'biblioteka' ? 'innowacja ROPS' : 'pomysł mieszkańców'}</span>
+                <strong>{w.zasob.tytul}</strong>
+                <span className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className={'px-2 py-0.5 rounded-full font-bold ' + STATUSY_WDROZENIA[w.status].klasa}>{STATUSY_WDROZENIA[w.status].nazwa}</span>
+                  {w.plan && <span className="text-muted">{{ realne: 'realne', realne_po_uproszczeniu: 'po uproszczeniu', nierealne: 'nierealne' }[w.plan.feasibility]}</span>}
+                  <span className="text-muted">· {w.plan ? 'plan →' : 'przygotuj plan →'}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="mb-10">
         <div className="flex flex-wrap justify-between items-end gap-3 mb-4">
