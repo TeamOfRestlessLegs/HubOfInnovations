@@ -4,6 +4,8 @@ from fastapi import Depends, HTTPException, Request
 from openai import AsyncOpenAI
 
 from core.analyzer import InnovationAnalyzer
+from core.idea_analyzer import IdeaAnalyzer
+from core.ideas_search import IdeasSearch
 from core.innovations_client import InnovationsClient
 from core.observer_store import ObserverStore
 from core.vector_store import VectorStore
@@ -55,6 +57,18 @@ def get_analyzer(request: Request) -> InnovationAnalyzer:
 Analyzer = Annotated[InnovationAnalyzer, Depends(get_analyzer)]
 
 
+def get_ideas(request: Request) -> IdeasSearch:
+    return request.app.state.ideas
+
+
+Ideas = Annotated[IdeasSearch, Depends(get_ideas)]
+
+
+def get_idea_analyzer(request: Request) -> IdeaAnalyzer:
+    return request.app.state.idea_analyzer
+
+
+IdeaAnalyzerDep = Annotated[IdeaAnalyzer, Depends(get_idea_analyzer)]
 def get_analyzer_optional(request: Request) -> InnovationAnalyzer | None:
     """Analizator, jeśli jest – Middleman bez niego też układa plan (tylko bez doświadczeń z podobnych wdrożeń)."""
     return getattr(request.app.state, "analyzer", None)
