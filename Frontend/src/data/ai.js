@@ -20,11 +20,13 @@ export async function zapytaj(metoda, sciezka, cialo) {
   }
   if (!odp.ok) {
     let tekst = `Błąd serwisu AI (${odp.status})`
+    let dane = null
     try {
-      const d = await odp.json()
+      const d = dane = await odp.json()
       tekst = typeof d.detail === 'string' ? d.detail : (d.detail || []).map((x) => `${x.loc?.slice(-1)[0]}: ${x.msg}`).join('; ') || tekst
     } catch { /* odpowiedź bez JSON */ }
-    throw new Error(tekst)
+    // dane: pełna odpowiedź błędu (np. 409 z listą `candidates`, gdy nazwa innowacji jest niejednoznaczna)
+    throw Object.assign(new Error(tekst), { status: odp.status, dane })
   }
   return odp.json()
 }

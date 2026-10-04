@@ -61,6 +61,12 @@ class AtrapaBiblioteki:
     async def query_context(self, innovation_id, query, limit=6):
         return [{"text": "Koszt paliwa ok. 250 zł miesięcznie na samochód.", "file": "model.pdf", "page": 3, "source": "pdf", "score": 0.9}]
 
+    async def search(self, query, limit=5, category=None):
+        return [{"id": "dla-seniorow/teleporady", "score": 0.8}, {"id": INNOWACJA, "score": 0.7}]
+
+    async def similar(self, innovation_id, limit=5):
+        return [{"id": "dla-seniorow/teleporady", "score": 0.8}, {"id": "dla-seniorow/spizarnia", "score": 0.6}]
+
     def browse(self, category, query, limit, offset):
         wynik = [{"id": INNOWACJA, "category_slug": "dla-seniorow", "slug": "mobilny-sasiad", "title": "Mobilny Sąsiad",
                   "category": "Dla seniorów", "url": "https://rops.krakow.pl/x", "summary": "Dowóz…"}]
@@ -70,11 +76,34 @@ class AtrapaBiblioteki:
         return [{"slug": "dla-seniorow", "name": "Dla seniorów", "count": 1}]
 
 
-def klient(atrapa_openai):
+class AtrapaAnalizatora:
+    """Analizy z Biblioteki – zapamiętuje, o co Middleman pytał."""
+
+    def __init__(self, blad=None):
+        self.blad, self.wywolania = blad, []
+
+    async def analyze(self, innovation_id):
+        self.wywolania.append(("analyze", innovation_id))
+        if self.blad:
+            raise self.blad
+        return {"id": innovation_id, "title": "Mobilny Sąsiad", "summary": "Dowóz.", "origin": {}, "resources": {},
+                "location": {}, "testing": {}, "replication": {}}
+
+    async def compare(self, ranked, base_id=None, user_description=None):
+        self.wywolania.append(("compare", base_id, user_description))
+        return {"typical_budget": "12 000–30 000 zł (dane z 2 z 2 projektów)", "what_worked": ["wolontariat OSP"],
+                "common_risks": ["brak kierowców"], "common_staff": [], "common_partners": ["OSP"], "common_resources": [],
+                "recommendations": ["zacznij od pilotażu"],
+                "compared": [{"title": "Teleporady", "budget_pln": 12000, "participants": 40, "duration": "6 mies.", "partners": ["OSP"]}]}
+
+
+def klient(atrapa_openai, analizator=None):
     app = FastAPI()
     app.include_router(middlemanRoute)
     app.include_router(innovationsRoute)
     app.state.openai, app.state.store, app.state.observer = atrapa_openai, AtrapaBiblioteki(), None
+    if analizator:
+        app.state.analyzer = analizator
     return TestClient(app)
 
 
@@ -224,3 +253,28 @@ def test_vector_store_przegladanie_na_malej_bazie(tmp_path):
     assert "Pełny opis Mobilny Sąsiad." in d["description"] and d["materials"] == [{"file": "model.pdf", "source": "pdf_materialy"}]
     with pytest.raises(InnovationNotFound):
         asyncio.run(store.detail("x/y"))
+
+
+def test_plan_korzysta_z_analiz_wdrozen():
+    ai, an = AtrapaOpenAI(plan()), AtrapaAnalizatora()
+    p = klient(ai, an).post("/middleman/plan", json=zapytanie()).json()
+    tresc = ai.wywolania[0]["messages"][1]["content"]
+    assert "DOŚWIADCZENIA Z WCZEŚNIEJSZYCH WDROŻEŃ" in tresc and "12 000–30 000 zł" in tresc and "brak kierowców" in tresc
+    assert [w[0] for w in an.wywolania] == ["analyze", "compare"] and an.wywolania[1][1] == INNOWACJA
+    assert p["based_on"] == ["Mobilny Sąsiad", "Teleporady"]
+
+
+def test_pomysl_mieszkanca_dostaje_benchmark():
+    ai, an = AtrapaOpenAI(plan()), AtrapaAnalizatora()
+    body = {**zapytanie(), "source": {"type": "idea", "title": "Kawiarenka cyfrowa", "problem": "Seniorzy bez internetu",
+                                      "description": "Licealiści uczą seniorów obsługi telefonu."}}
+    p = klient(ai, an).post("/middleman/plan", json=body).json()
+    assert an.wywolania[0][0] == "compare" and "Kawiarenka cyfrowa" in an.wywolania[0][2]
+    assert "zacznij od pilotażu" in ai.wywolania[0]["messages"][1]["content"] and p["based_on"] == ["Teleporady"]
+
+
+def test_blad_analizy_nie_blokuje_planu():
+    ai = AtrapaOpenAI(plan())
+    r = klient(ai, AtrapaAnalizatora(blad=RuntimeError("model nie odpowiada"))).post("/middleman/plan", json=zapytanie())
+    assert r.status_code == 200 and r.json()["based_on"] == []
+    assert "DOŚWIADCZENIA" not in ai.wywolania[0]["messages"][1]["content"]

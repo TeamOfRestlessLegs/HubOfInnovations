@@ -53,3 +53,11 @@ def get_analyzer(request: Request) -> InnovationAnalyzer:
 
 
 Analyzer = Annotated[InnovationAnalyzer, Depends(get_analyzer)]
+
+
+def get_analyzer_optional(request: Request) -> InnovationAnalyzer | None:
+    """Analizator, jeśli jest – Middleman bez niego też układa plan (tylko bez doświadczeń z podobnych wdrożeń)."""
+    return getattr(request.app.state, "analyzer", None)
+
+
+OptionalAnalyzer = Annotated[InnovationAnalyzer | None, Depends(get_analyzer_optional)]

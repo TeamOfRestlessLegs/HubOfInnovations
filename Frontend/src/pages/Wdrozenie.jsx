@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { useDane, STATUSY_WDROZENIA } from '../data/DaneContext.jsx'
+import { skrot } from '../components/Markdown.jsx'
+import AnalizyInnowacji from '../components/AnalizyInnowacji.jsx'
 import { aiDostepne, BRAK_AI, zapytaj } from '../data/ai.js'
 
 // Middleman Innowacji: gmina podaje swoje zasoby, AI (Backend/ai-service, POST /middleman/plan) układa plan wdrożenia
@@ -31,7 +33,7 @@ export default function Wdrozenie() {
 
 function Edytor({ w, edycja }) {
   const { uzytkownik: ja } = useAuth()
-  const { fiszki, zapiszPlanWdrozenia, zmienStatusWdrozenia, usunWdrozenie, wyslijWdrozenieDoROPS } = useDane()
+  const { fiszki, biblioteka, zapiszPlanWdrozenia, zmienStatusWdrozenia, usunWdrozenie, wyslijWdrozenieDoROPS } = useDane()
   const navigate = useNavigate()
   const [ograniczenia, setOgraniczenia] = useState(w.ograniczenia || PUSTE)
   const [communeId, setCommuneId] = useState(w.communeId || '')
@@ -45,7 +47,7 @@ function Edytor({ w, edycja }) {
 
   const fiszka = w.zasob.typ === 'fiszka' ? fiszki.find((f) => String(f.id) === String(w.zasob.id)) : null
   useEffect(() => {
-    if (w.zasob.typ === 'biblioteka' && aiDostepne) {
+    if (w.zasob.typ === 'biblioteka' && aiDostepne && String(w.zasob.id).includes('/')) {
       zapytaj('GET', '/innovations/' + w.zasob.id).then(setZasob, (e) => setBlad(e.message))
     }
   }, [w.zasob])
@@ -70,7 +72,11 @@ function Edytor({ w, edycja }) {
     ograniczenia.staff.length === 0 && 'Bez pracowników gminy całość musi wziąć na siebie partner albo wolontariusze.',
   ].filter(Boolean)
 
-  const zrodlo = () => (w.zasob.typ === 'biblioteka'
+  // Wpisy demo (id bez „/”) nie istnieją w serwisie AI – wysyłamy je jak pomysł z opisem
+  const demo = w.zasob.typ === 'biblioteka' && !String(w.zasob.id).includes('/') ? biblioteka.find((b) => b.id === w.zasob.id) : null
+  const zrodlo = () => (demo
+    ? { type: 'idea', title: demo.tytul, problem: '', description: demo.opis }
+    : w.zasob.typ === 'biblioteka'
     ? { type: 'library', id: w.zasob.id }
     : { type: 'idea', title: fiszka?.tytul || w.zasob.tytul, problem: fiszka?.problem || '', description: fiszka?.opis || w.zasob.tytul })
   const cialo = () => ({
@@ -106,6 +112,8 @@ function Edytor({ w, edycja }) {
       </div>
 
       <OpisZasobu w={w} zasob={zasob} fiszka={fiszka} />
+
+      <AnalizyInnowacji w={w} opis={demo?.opis || fiszka?.opis || ''} ograniczenia={ograniczenia} />
 
       <div aria-live="polite" className="print:hidden">
         {komunikat && <p role="status" className="mb-4 px-4 py-3 rounded-xl bg-teal-light text-teal-dark font-bold">{komunikat}</p>}
@@ -221,12 +229,21 @@ function OpisZasobu({ w, zasob, fiszka }) {
     )
   }
   if (!zasob) return null
+  const pliki = zasob.materials.map((m) => m.file.replace(/\.[^.]+$/, ''))
   return (
     <section className="bg-ground rounded-2xl p-5 mb-6 flex flex-col gap-2 print:hidden">
       <p className="text-sm font-bold text-teal">{zasob.category}</p>
-      <p className="line-clamp-4">{zasob.description}</p>
-      <p className="text-sm text-muted">Materiały ROPS: {zasob.materials.length ? zasob.materials.map((m) => m.file).join(', ') : 'brak'} – Middleman bierze z nich fragmenty do planu.</p>
-      <a href={zasob.url} target="_blank" rel="noreferrer" className="font-bold min-h-11 inline-flex items-center">Pełny opis na stronie ROPS<span className="sr-only"> (nowa karta)</span> →</a>
+      <p className="text-lg">{skrot(zasob.description)}</p>
+      {pliki.length > 0 && (
+        <details className="text-[15px]">
+          <summary className="cursor-pointer min-h-11 flex items-center font-bold">Materiały ROPS ({pliki.length}) – Middleman bierze z nich fragmenty do planu</summary>
+          <ul className="list-disc pl-6 text-muted columns-1 md:columns-2">{pliki.map((n) => <li key={n}>{n}</li>)}</ul>
+        </details>
+      )}
+      <p className="flex flex-wrap gap-x-5">
+        <Link to={'/baza-wiedzy/' + zasob.id} className="font-bold min-h-11 inline-flex items-center">Pełny opis w Bazie wiedzy →</Link>
+        <a href={zasob.url} target="_blank" rel="noreferrer" className="font-bold min-h-11 inline-flex items-center">Strona ROPS<span className="sr-only"> (nowa karta)</span> →</a>
+      </p>
     </section>
   )
 }
@@ -330,9 +347,12 @@ function WidokPlanu({ plan, budzet }) {
         </Sekcja>
       )}
 
-      {(plan.sources.length > 0 || plan.checks.length > 0) && (
+      {(plan.sources.length > 0 || plan.checks.length > 0 || plan.based_on?.length > 0) && (
         <details className="bg-white border border-line rounded-2xl p-5">
           <summary className="font-bold cursor-pointer min-h-11 flex items-center">Na czym oparto plan</summary>
+          {plan.based_on?.length > 0 && (
+            <p className="mt-2 text-[15px]"><strong>Doświadczenia z wdrożeń (analiza dokumentów ROPS):</strong> {plan.based_on.join(', ')}.</p>
+          )}
           {plan.sources.length > 0 && (
             <ul className="flex flex-col gap-2 mt-2 text-[15px]">
               {plan.sources.map((s, i) => <li key={i}><span className="font-bold">{s.file}{s.page ? `, s. ${s.page}` : ''}:</span> {s.text.slice(0, 300)}{s.text.length > 300 && '…'}</li>)}
@@ -368,7 +388,7 @@ function Brak({ tekst }) {
   return (
     <main className="max-w-3xl mx-auto px-6 py-16">
       <h1 className="font-display font-extrabold text-3xl mb-3">{tekst}</h1>
-      <Link to="/zasobnik?dzial=biblioteka">← Biblioteka Innowacji</Link>
+      <Link to="/baza-wiedzy">← Baza wiedzy</Link>
     </main>
   )
 }
