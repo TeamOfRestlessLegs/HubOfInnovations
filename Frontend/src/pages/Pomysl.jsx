@@ -9,10 +9,12 @@ import SzczegolyFiszki from '../components/SzczegolyFiszki.jsx'
 import PasekEtapu from '../components/PasekEtapu.jsx'
 import StatusWpisu from '../components/StatusWpisu.jsx'
 import WzorWniosku from '../components/WzorWniosku.jsx'
+import WniosekPdf from '../components/WniosekPdf.jsx'
 import UsunFiszke from '../components/UsunFiszke.jsx'
 import DecyzjaZarzadu from '../components/DecyzjaZarzadu.jsx'
 import { GRUPY } from '../data/fiszka.js'
 import { ETAPY } from '../data/etapy.js'
+import AkcjeWdrozenia from '../components/AkcjeWdrozenia.jsx'
 
 // Trzy zakładki wątku: luźna dyskusja, merytoryczne Q&A z ekspertami/ROPS, oficjalna sekcja „twarda”
 const ZAKLADKI = [
@@ -62,6 +64,12 @@ export default function Pomysl() {
           <BannerNaboru key={n.id} f={f} n={n} wniosek={jegoWnioski.find((w) => w.naborId === n.id)} prowadzacy={mojProwadzony} />
         ))}
         <PrzejmijJakoGmina f={f} ja={ja} />
+        {f.status === 'opublikowana' && ja?.rola === 'jst' && (
+          <div className="rounded-2xl border border-line bg-white p-5 flex flex-col gap-3">
+            <p><strong>Chcecie uruchomić ten pomysł u siebie?</strong> Zapisz go albo poproś Middlemana o plan wdrożenia pod Wasz budżet i zespół. Autor dostanie powiadomienie.</p>
+            <AkcjeWdrozenia zasob={{ typ: 'fiszka', id: f.id, tytul: f.tytul }} />
+          </div>
+        )}
       </div>
       <section aria-labelledby="h-o" className="bg-white border border-line rounded-2xl p-6 flex flex-col gap-4 mb-8">
         <h2 id="h-o" className="font-display font-bold text-2xl">O pomyśle</h2>
@@ -452,7 +460,7 @@ function Oficjalne({ f, ja, lista, wnioski, nabory, mozeDodac }) {
           <p className="text-muted">Wnioski przygotowane w generatorze. Publiczne stają się po wybraniu w naborze.</p>
         </div>
         {dokumenty.length === 0 && <p className="text-muted">Brak dokumentów.</p>}
-        {dokumenty.map((w) => <Dokument key={w.id} w={w} n={nabory.find((x) => x.id === w.naborId)} edycja={mojProwadzony && w.status === 'szkic'} />)}
+        {dokumenty.map((w) => <Dokument key={w.id} w={w} n={nabory.find((x) => x.id === w.naborId)} edycja={mojProwadzony && w.status === 'szkic'} jakoPdf={ja?.rola === 'rops_admin'} />)}
       </section>
 
       <section aria-labelledby="h-akt" className="flex flex-col gap-4">
@@ -491,7 +499,8 @@ function Oficjalne({ f, ja, lista, wnioski, nabory, mozeDodac }) {
 
 const STATUS_DOKUMENTU = { szkic: 'Szkic', zlozony: 'Złożony – czeka na ocenę', przyjety: 'Wybrany w naborze', odrzucony: 'Niewybrany' }
 
-function Dokument({ w, n, edycja }) {
+// ROPS widzi wniosek wyłącznie jako wypełniony PDF; pozostali – jako tekst na stronie
+function Dokument({ w, n, edycja, jakoPdf }) {
   const [otwarty, setOtwarty] = useState(w.status === 'przyjety')
   return (
     <article className={'bg-white rounded-2xl p-5 flex flex-col gap-3 border-2 ' + (w.status === 'przyjety' ? 'border-teal' : 'border-line')}>
@@ -502,10 +511,11 @@ function Dokument({ w, n, edycja }) {
         </div>
         <div className="flex gap-2">
           {edycja && <Link to={`/wniosek/${w.fiszkaId}/${w.naborId}`} className="min-h-10 px-3 inline-flex items-center rounded-lg bg-clay text-white font-bold text-sm no-underline">Dokończ</Link>}
-          <button type="button" onClick={() => setOtwarty(!otwarty)} aria-expanded={otwarty} className="min-h-10 px-3 rounded-lg border-2 border-ink font-bold text-sm">{otwarty ? 'Zwiń' : 'Czytaj'}</button>
+          <button type="button" onClick={() => setOtwarty(!otwarty)} aria-expanded={otwarty} className="min-h-10 px-3 rounded-lg border-2 border-ink font-bold text-sm">{otwarty ? 'Zwiń' : jakoPdf ? 'Pokaż PDF' : 'Czytaj'}</button>
         </div>
       </div>
-      {otwarty && (
+      {otwarty && jakoPdf && <WniosekPdf w={w} n={n} />}
+      {otwarty && !jakoPdf && (
         <dl className="flex flex-col gap-4">
           {(n?.pola || []).map((p) => (
             <div key={p.id}>

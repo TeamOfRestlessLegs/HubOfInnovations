@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 import pl.hackathon.hubofinnovations.innovations.adapter.out.persistence.IdeaEntity;
 import pl.hackathon.hubofinnovations.innovations.adapter.out.persistence.SpringDataIdeaRepository;
+import pl.hackathon.hubofinnovations.innovations.adapter.out.persistence.SpringDataOfficialPostRepository;
+import pl.hackathon.hubofinnovations.innovations.adapter.out.persistence.SpringDataSupportRepository;
 import pl.hackathon.hubofinnovations.innovations.domain.model.IdeaStatus;
 import pl.hackathon.hubofinnovations.innovations.domain.port.in.dto.CreateIdeaCommand;
 import pl.hackathon.hubofinnovations.innovations.domain.port.in.dto.IdeaDto;
@@ -24,6 +26,12 @@ class IdeaManagerTest {
 
     @Mock
     private SpringDataIdeaRepository repository;
+
+    @Mock
+    private SpringDataSupportRepository supportRepository;
+
+    @Mock
+    private SpringDataOfficialPostRepository postRepository;
 
     @InjectMocks
     private IdeaManager ideaManager;
@@ -45,7 +53,7 @@ class IdeaManagerTest {
         when(repository.save(any(IdeaEntity.class))).thenReturn(savedEntity);
 
         // when
-        IdeaDto result = ideaManager.createIdea(cmd);
+        IdeaDto result = ideaManager.createIdea(cmd, 1L);
 
         // then
         assertNotNull(result);
@@ -67,12 +75,13 @@ class IdeaManagerTest {
         when(repository.save(any(IdeaEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        IdeaDto result = ideaManager.rejectIdea(100L, "Za mało detali");
+        IdeaDto result = ideaManager.rejectIdea(100L, "Za mało detali", 99L);
 
         // then
         assertEquals(IdeaStatus.REJECTED, result.status());
         assertEquals("Za mało detali", result.rejectReason());
         verify(repository, times(1)).save(existingIdea);
+        verify(postRepository, times(1)).save(any()); // Weryfikacja zapisu oficjalnego posta
     }
 
     @Test
@@ -81,7 +90,7 @@ class IdeaManagerTest {
         when(repository.findById(999L)).thenReturn(Optional.empty());
 
         // when & then
-        assertThrows(ResponseStatusException.class, () -> ideaManager.rejectIdea(999L, "Powód"));
+        assertThrows(ResponseStatusException.class, () -> ideaManager.rejectIdea(999L, "Powód", 99L));
         verify(repository, never()).save(any(IdeaEntity.class));
     }
 

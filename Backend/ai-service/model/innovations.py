@@ -48,3 +48,34 @@ class InnovationHit(BaseModel):
 class SearchResponse(BaseModel):
     results: list[InnovationHit]
     details_available: bool = True  # False = serwis innovations nie odpowiedział, wyniki bez szczegółów
+
+
+class InnovationSummary(BaseModel):
+    id: str                     # "kategoria/slug" – ten sam identyfikator co w wyszukiwaniu
+    category_slug: str
+    slug: str
+    title: str
+    category: str
+    url: str                    # pełny opis na stronie ROPS
+    summary: str                # początek opisu (do 300 znaków)
+
+
+class InnovationList(BaseModel):
+    total: int
+    results: list[InnovationSummary]
+
+
+class Category(BaseModel):
+    slug: str
+    name: str
+    count: int
+
+
+class Material(BaseModel):
+    file: str
+    source: str                 # pdf_materialy / pdf_dowiedz_sie_wiecej
+
+
+class InnovationDetail(InnovationSummary):
+    description: str
+    materials: list[Material]

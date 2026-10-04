@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom'
 import { obszarPoId } from '../data/obszary.js'
-import { useAuth } from '../auth/AuthContext.jsx'
+import AkcjeWdrozenia from './AkcjeWdrozenia.jsx'
 
 // Karta innowacji z Biblioteki ROPS – dokładnie to, co zwraca backend:
 // tytuł, krótki opis, załączniki, link „czytaj więcej” (+ opcjonalnie film).
 // Używana w wyszukiwarce, Zasobniku i na stronach obszarów.
+// i.rops = innowacja z prawdziwej Biblioteki ROPS (serwis AI): kategoria zamiast obszarów, gmina może ją wdrożyć.
 export default function KartaBiblioteki({ innowacja: i, podobienstwo, powody }) {
-  const { uzytkownik: ja } = useAuth()
   return (
     <article className="bg-white border border-line rounded-2xl p-5 flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
         {podobienstwo && <span className="px-2.5 py-0.5 rounded-full bg-teal text-white font-bold text-sm">{podobienstwo}</span>}
         <span className="px-2.5 py-0.5 rounded-full bg-[#E6EAF0] font-bold text-sm">Sprawdzone przez ROPS</span>
+        {i.kategoria && <span className="px-2.5 py-0.5 rounded-full bg-teal-light text-teal-dark font-bold text-sm">{i.kategoria}</span>}
         {(i.obszary || []).map((id) => (
           <span key={id} className="px-2.5 py-0.5 rounded-full bg-teal-light text-teal-dark font-bold text-sm">{obszarPoId(id)?.nazwa}</span>
         ))}
@@ -45,12 +46,12 @@ export default function KartaBiblioteki({ innowacja: i, podobienstwo, powody }) 
       )}
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-auto">
-        <a href={i.url} className="min-h-11 inline-flex items-center font-bold">Czytaj więcej →</a>
-        {/* Gmina: rozmowa z ROPS o wdrożeniu (docelowo: Middleman dopasuje innowację do zasobów gminy) */}
-        {ja?.rola === 'jst' && (
-          <Link to={`/panel?wdroz=${i.id}`} className="min-h-11 px-4 inline-flex items-center rounded-lg bg-clay text-white font-bold no-underline">Chcę wdrożyć u nas</Link>
-        )}
-        <Link to={`/tester?ocen=${i.id}`} className="min-h-11 inline-flex items-center font-bold text-muted">Oceń</Link>
+        <a href={i.url} target={i.rops ? '_blank' : undefined} rel="noreferrer" className="min-h-11 inline-flex items-center font-bold">
+          Czytaj więcej{i.rops && <span className="sr-only"> (strona ROPS, nowa karta)</span>} →
+        </a>
+        {!i.rops && <Link to={`/tester?ocen=${i.id}`} className="min-h-11 inline-flex items-center font-bold text-muted">Oceń</Link>}
+        {/* Gmina: zapis i Middleman – na innowacjach z prawdziwej Biblioteki ROPS */}
+        {i.rops && <AkcjeWdrozenia zasob={{ typ: 'biblioteka', id: i.id, tytul: i.tytul }} />}
       </div>
     </article>
   )

@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { bibliotekaStartowa } from './biblioteka.js'
 import { fiszkiStartowe } from './fiszki.js'
 import { naboryStartowe } from './nabory.js'
+import { wnioskiStartowe } from './wnioskiStartowe.js'
+import { testyStartowe, zgloszeniaTestowStartowe, opinieStartowe } from './tester.js'
 import { useAuth, ROLE } from '../auth/AuthContext.jsx'
 import { aktualnosciStartowe, komentarzeStartowe, pytaniaStartowe, obserwatorzy, prowadzi } from './watekFiszki.js'
 
@@ -17,7 +19,9 @@ import { aktualnosciStartowe, komentarzeStartowe, pytaniaStartowe, obserwatorzy,
 //   watki       – rozmowy (przy fiszce, pytanie do ROPS/eksperta, wdrożenie dla JST); widzą tylko uczestnicy
 //   powiadomienia – tworzone AUTOMATYCZNIE przy akcjach (docelowo backend: zdarzenie → powiadomienie + e-mail)
 //   aktualnosci, komentarze, pytania – publiczny wątek pomysłu (/pomysl/:id)
-//   przejecia   – prośby gmin o przejęcie prowadzenia (tabela takeover_requests); STATUS: czeka | przyjeta | odrzucona | wycofana
+//   wdrozenia   – innowacje i pomysły zapisane przez gminę (JST) + plan wdrożenia z Middlemana
+//                 { id, gminaId, zasob: { typ: 'biblioteka' | 'fiszka', id, tytul }, status: zapisane | plan | w_realizacji,
+//                   ograniczenia, communeId, plan, wersje[], wyslanoDoROPS }
 //
 // ADRESAT (watek.uczestnicy, powiadomienie.do): id użytkownika albo cała rola: 'rola:rops_admin', 'rola:ekspert'
 
@@ -44,14 +48,22 @@ function stanStartowy() {
     })),
     zgloszenia: zgloszeniaStartowe,
     nabory: naboryStartowe,
-    wnioski: [],
+    wnioski: wnioskiStartowe,
     watki: watkiStartowe,
     powiadomienia: [],
     aktualnosci: aktualnosciStartowe,
     komentarze: komentarzeStartowe,
     pytania: pytaniaStartowe,
-    przejecia: [],
+    wdrozenia: [],
   }
+}
+
+// Id wdrożenia: jedna gmina × jeden zasób (np. "wd-demo-jst-biblioteka-dla-seniorow--mobilny-sasiad")
+export const idWdrozenia = (gminaId, zasob) => `wd-${gminaId}-${zasob.typ}-${String(zasob.id).replace(/\//g, '--')}`
+export const STATUSY_WDROZENIA = {
+  zapisane: { nazwa: 'Zapisane', klasa: 'bg-[#E6EAF0] text-ink' },
+  plan: { nazwa: 'Plan gotowy', klasa: 'bg-teal-light text-teal-dark' },
+  w_realizacji: { nazwa: 'Wdrażamy', klasa: 'bg-clay-light text-clay-dark' },
 }
 
 const watkiStartowe = [
@@ -69,11 +81,24 @@ const watkiStartowe = [
   },
 ]
 
+// Przykładowe nabory / wnioski: brakujące dodajemy, a nowszą `wersję` przykładu podmieniamy (status naboru zostaje)
+function zPrzykladami(zapisane, startowe) {
+  if (!zapisane) return startowe
+  const przyklady = startowe.map((s) => {
+    const z = zapisane.find((x) => x.id === s.id)
+    if (!z) return s
+    return (z.wersja || 0) < (s.wersja || 0) ? { ...s, ...(z.status && { status: z.status }) } : z
+  })
+  return [...przyklady, ...zapisane.filter((z) => !startowe.some((s) => s.id === z.id))]
+}
+
 // Stare zapisy (sprzed nowych modułów) uzupełniamy brakującymi kolekcjami
 function wczytaj() {
   try {
     const zapis = JSON.parse(localStorage.getItem(KLUCZ))
-    return zapis ? { ...stanStartowy(), ...zapis } : stanStartowy()
+    if (!zapis) return stanStartowy()
+    const start = stanStartowy()
+    return { ...start, ...zapis, nabory: zPrzykladami(zapis.nabory, start.nabory), wnioski: zPrzykladami(zapis.wnioski, start.wnioski) }
   } catch {
     return stanStartowy()
   }
@@ -303,7 +328,10 @@ export function DaneProvider({ children }) {
       powiadom(autorzy.map((a) => ({ do: a, typ: 'nabor', tresc: `Ruszył nowy nabór: ${n.nazwa}`, link: '/panel' })))
     },
     // POST /api/nabory/{id}/wzor (PDF) – dodanie lub podmiana wzoru wniosku
-    ustawWzorNaboru: (id, wzor) => zmien('nabory', id, { wzor }),
+    // nowy plik wzoru – stary układ stron już do niego nie pasuje (do ponownego odczytu pól)
+    ustawWzorNaboru: (id, wzor) => zmien('nabory', id, { wzor, uklad: null }),
+    // PATCH /api/nabory/{id} – pola wniosku, pytania i układ stron odczytane ze wzoru (zatwierdzone przez ROPS)
+    ustawPolaNaboru: (id, { pola, pytania, uklad = null }) => zmien('nabory', id, { pola, pytania, uklad }),
     // PATCH /api/nabory/{id}
     zamknijNabor: (id) => zmien('nabory', id, { status: 'zamkniety' }),
     // PUT /api/wnioski/{id}  – autor zapisuje szkic
@@ -341,6 +369,68 @@ export function DaneProvider({ children }) {
     zglosWyzwanieJST: (z) => {
       dodaj('zgloszenia', { id: 'z' + Date.now(), data: teraz(), zrodlo: 'jst', autorId: ja.id, autor: ja.imie, ...z })
       powiadom([{ do: ROPS, typ: 'wyzwanie_jst', tresc: `Gmina zgłasza wyzwanie (pow. ${z.powiat}): ${z.tekst.slice(0, 60)}`, link: '/panel' }])
+    },
+
+    // ── Wdrożenia w gminie (Middleman) ──────────────────────
+    // POST /api/wdrozenia – gmina zapisuje innowację / pomysł; autor pomysłu dostaje powiadomienie. Zwraca id.
+    zapiszDoWdrozenia: (zasob) => {
+      const id = idWdrozenia(ja.id, zasob)
+      if (dane.wdrozenia.some((w) => w.id === id)) return id
+      dodaj('wdrozenia', { id, gminaId: ja.id, gmina: ja.imie, powiat: ja.powiat, zasob, status: 'zapisane', ograniczenia: null, communeId: null, plan: null, wersje: [], utworzono: teraz(), zmieniono: teraz() })
+      if (zasob.typ === 'fiszka') {
+        const f = fiszka(zasob.id)
+        if (f) powiadom([{ do: f.autorId, typ: 'wdrozenie', tresc: `Gmina (pow. ${ja.powiat}) zapisała Twój pomysł „${f.tytul}” do wdrożenia.`, link: doWatku(f.id) }])
+      }
+      return id
+    },
+    // PUT /api/wdrozenia/{id}/plan – zapis planu z Middlemana (poprzednie wersje zostają w historii)
+    zapiszPlanWdrozenia: (id, { ograniczenia, communeId, plan, polecenie }) =>
+      setDane((d) => ({
+        ...d,
+        wdrozenia: d.wdrozenia.map((w) => (w.id === id ? {
+          ...w, ograniczenia, communeId, plan, status: w.status === 'w_realizacji' ? w.status : 'plan', zmieniono: teraz(),
+          wersje: [{ data: teraz(), polecenie: polecenie || null, plan }, ...w.wersje].slice(0, 5),
+        } : w)),
+      })),
+    // PATCH /api/wdrozenia/{id} – status; „Wdrażamy” pomysłu mieszkańca → powiadomienie autora
+    zmienStatusWdrozenia: (id, status) => {
+      const w = dane.wdrozenia.find((x) => x.id === id)
+      zmien('wdrozenia', id, { status, zmieniono: teraz() })
+      const f = w?.zasob.typ === 'fiszka' && fiszka(w.zasob.id)
+      if (f && status === 'w_realizacji') powiadom([{ do: f.autorId, typ: 'wdrozenie', tresc: `Gmina (pow. ${w.powiat}) wdraża Twój pomysł „${f.tytul}”.`, link: doWatku(f.id) }])
+    },
+    // DELETE /api/wdrozenia/{id}
+    usunWdrozenie: (id) => setDane((d) => ({ ...d, wdrozenia: d.wdrozenia.filter((w) => w.id !== id) })),
+    // POST /api/wdrozenia/{id}/do-rops – ROPS dostaje plan do konsultacji
+    wyslijWdrozenieDoROPS: (id) => {
+      const w = dane.wdrozenia.find((x) => x.id === id)
+      zmien('wdrozenia', id, { wyslanoDoROPS: teraz() })
+      powiadom([{ do: ROPS, typ: 'wdrozenie', tresc: `Gmina (pow. ${w?.powiat}) prosi o konsultację planu wdrożenia: ${w?.zasob.tytul}`, link: '/wdrozenie/' + id }])
+    },
+
+    // ── Tester innowacji ────────────────────────────────────
+    // POST /api/testy – ROPS ogłasza test
+    dodajTest: (t) => dodaj('testy', { ...t, id: 't' + Date.now(), status: 'rekrutacja' }),
+    // PATCH /api/testy/{id}
+    zmienStatusTestu: (id, status) => zmien('testy', id, { status }),
+    // POST /api/testy/{id}/zgloszenia
+    zglosSieDoTestu: (testId, z) => {
+      dodaj('zgloszeniaTestow', { id: 'zt' + Date.now(), testId, uzytkownikId: ja.id, imie: ja.imie, status: 'zgloszony', data: teraz(), ...z })
+      const t = dane.testy.find((x) => x.id === testId)
+      powiadom([{ do: ROPS, typ: 'zgloszenie_testu', tresc: `Nowy chętny do testu: ${t?.tytul}`, link: '/panel' }])
+    },
+    // PATCH /api/testy/zgloszenia/{id} – ROPS przyjmuje / odrzuca
+    decyzjaTestera: (id, status) => {
+      const z = dane.zgloszeniaTestow.find((x) => x.id === id)
+      const t = dane.testy.find((x) => x.id === z?.testId)
+      zmien('zgloszeniaTestow', id, { status })
+      powiadom([{ do: z?.uzytkownikId, typ: 'tester_decyzja', tresc: status === 'przyjety' ? `Jesteś w grupie testowej: ${t?.tytul}` : `Tym razem nie ma miejsca w teście: ${t?.tytul}`, link: '/tester' }])
+    },
+    // POST /api/opinie → powiadomienie dla autora fiszki (albo ROPS przy innowacji z Biblioteki)
+    dodajOpinie: (o) => {
+      dodaj('opinie', { ...o, id: 'o' + Date.now(), uzytkownikId: ja.id, imie: ja.imie, data: teraz() })
+      const autor = o.zasob.typ === 'fiszka' ? fiszka(o.zasob.id)?.autorId : ROPS
+      powiadom([{ do: autor, typ: 'opinia', tresc: `Nowa opinia testera (${o.ocena}/5)`, link: o.zasob.typ === 'fiszka' ? '/panel' : '/tester' }])
     },
 
     // Tylko do demo: przywraca dane przykładowe

@@ -10,3 +10,5 @@ vector_db_tmp/
 vector_db_old/
 tests/
 query_example.py
+# cache analiz LLM — montowany jako wolumen
+data/
