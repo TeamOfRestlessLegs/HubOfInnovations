@@ -32,6 +32,7 @@ services:
       - ./ai-service/vector_db:/app/vector_db   # budowana przez automations/build_vector_db.py
       - ../Dane:/dane                           # Obserwator (pakiet splot_dane + obserwator.sqlite)
       - hf_models:/models                       # cache modelu embeddingów Obserwatora
+      - ./ai-service/data:/app/data             # gotowe analizy LLM (scripts/build_analyses.py)
 
   innovations:
     build: ./innovations                        # wymaga wcześniej: mvn -pl innovations -am package

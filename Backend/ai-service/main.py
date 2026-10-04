@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from openai import AsyncOpenAI
 import uvicorn
 
+from core.analysis_cache import AnalysisCache
+from core.analyzer import InnovationAnalyzer
 from core.config import get_settings
 from core.innovations_client import InnovationsClient
 from core.observer_store import ObserverStore
@@ -24,6 +26,8 @@ async def lifespan(app: FastAPI):
         settings.vector_db_path, settings.collection, settings.profiles_collection, openai
     )
     app.state.innovations = InnovationsClient(settings.innovations_api_url, settings.innovations_timeout)
+    analysis_cache = AnalysisCache(settings.analysis_db_path)
+    app.state.analyzer = InnovationAnalyzer(app.state.store, openai, analysis_cache, settings.analysis_model)
     # Obserwator jest opcjonalny: bez bazy / pakietu splot_dane działa reszta serwisu, a /observer zwraca 503
     app.state.observer, app.state.observer_error, warm_up = None, None, None
     try:
@@ -37,6 +41,7 @@ async def lifespan(app: FastAPI):
     if warm_up:
         warm_up.cancel()
     await app.state.innovations.close()
+    analysis_cache.close()
     await openai.close()
 
 
