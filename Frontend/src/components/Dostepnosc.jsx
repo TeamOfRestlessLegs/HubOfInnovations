@@ -31,7 +31,7 @@ export default function Dostepnosc() {
       <button type="button" className={przycisk + ' text-sm'} onClick={() => setUst({ ...ust, poziom: Math.max(0, ust.poziom - 1) })} disabled={ust.poziom === 0} aria-label="Zmniejsz tekst">A−</button>
       <button type="button" className={przycisk} onClick={() => setUst({ ...ust, poziom: 1 })} aria-pressed={ust.poziom === 1} aria-label="Domyślna wielkość tekstu">A</button>
       <button type="button" className={przycisk + ' text-lg'} onClick={() => setUst({ ...ust, poziom: Math.min(POZIOMY.length - 1, ust.poziom + 1) })} disabled={ust.poziom === POZIOMY.length - 1} aria-label="Powiększ tekst">A+</button>
-      <button type="button" className={przycisk + ' ml-1'} onClick={() => setUst({ ...ust, kontrast: !ust.kontrast })} aria-pressed={ust.kontrast} aria-label="Wysoki kontrast" title="Wysoki kontrast">
+      <button type="button" className={przycisk + ' ml-1'} onClick={() => setUst({ ...ust, kontrast: !ust.kontrast })} aria-pressed={ust.kontrast} aria-label="Wysoki kontrast (czarno-żółty)" title="Wysoki kontrast (czarno-żółty)">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" /></svg>
       </button>
     </div>
