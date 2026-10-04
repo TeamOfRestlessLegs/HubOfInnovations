@@ -18,7 +18,7 @@ export default function PasekEtapu({ etap, jasny = false }) {
         {ETAPY.map((e) => (
           <div
             key={e.nr}
-            className={'h-2 rounded ' + (e.nr <= etap ? (jasny ? 'bg-[#5CC8A8]' : 'bg-clay') : (jasny ? 'bg-white/20' : 'bg-line'))}
+            className={'h-2 rounded ' + (e.nr <= etap ? (jasny ? 'bg-[#5CC8A8]' : 'bg-clay') : (jasny ? 'bg-white/20' : 'bg-line pasek-pusty'))}
           />
         ))}
       </div>

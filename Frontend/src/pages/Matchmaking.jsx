@@ -95,9 +95,9 @@ export default function Matchmaking() {
                     </div>
                     <h3 className="font-display text-xl font-bold">{f.tytul}</h3>
                     <p className="text-muted"><strong className="text-ink">Problem:</strong> {f.problem}</p>
-                    <p className="text-sm text-muted">pow. {f.powiat} · {f.powody.join(' · ')}</p>
+                    <p className="text-sm text-muted">{f.powiat && `pow. ${f.powiat} · `}{f.powody.join(' · ')}</p>
                     <PasekEtapu etap={f.etap} />
-                    <Link to="/innowacje" className="font-bold min-h-11 inline-flex items-center">Zobacz i poprzyj →</Link>
+                    <Link to={'/pomysl/' + f.id} className="font-bold min-h-11 inline-flex items-center">Otwórz wątek i poprzyj →</Link>
                   </article>
                 ))}
               </div>
@@ -120,7 +120,7 @@ export default function Matchmaking() {
                   <>
                     <p className="font-bold text-[15px] mb-1">Raporty</p>
                     <ul className="text-[15px] text-muted flex flex-col gap-1 mb-3">
-                      {w.raporty.map((r) => <li key={r}>{r}</li>)}
+                      {w.raporty.map((r) => <li key={r.tytul}><a href={r.url} target="_blank" rel="noreferrer">{r.tytul}</a> <span className="text-sm">– {r.wydawca}</span></li>)}
                     </ul>
                   </>
                 )}

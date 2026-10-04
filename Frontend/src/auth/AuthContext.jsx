@@ -15,9 +15,11 @@ const AuthContext = createContext(null)
 const KLUCZ = 'splot-uzytkownik'
 const API = import.meta.env.VITE_API_URL
 
-// Dwie role: użytkownik (mieszkaniec, NGO, urzędnik – każdy, kto zgłasza) i ROPS = administrator
+// Cztery grupy z wyzwania. Nowe konto = resident; pozostałe role nadaje ROPS (docelowo w panelu / w bazie).
 export const ROLE = {
-  resident: 'Użytkownik',
+  resident: 'Mieszkaniec / NGO',
+  jst: 'Samorząd (JST)',
+  ekspert: 'Ekspert',
   rops_admin: 'ROPS (administrator)',
 }
 
@@ -68,15 +70,18 @@ export function AuthProvider({ children }) {
   }
 
   // Tylko w trybie demo: przełączanie roli, żeby pokazać panele jury
-  const zmienRoleDemo = API ? null : (rola) => zapisz({ ...uzytkownik, rola })
+  const zmienRoleDemo = API ? null : (rola) => zapisz({ ...uzytkownik, rola, ...(rola === 'jst' && !uzytkownik.powiat && { powiat: 'myślenicki' }) })
 
   // Tylko podczas `npm run dev`: wejście bez Google, do testowania stron
   const zalogujDemo = import.meta.env.DEV
-    ? (rola) => zapisz({ id: 'demo-' + rola, imie: 'Test ' + ROLE[rola], email: 'demo@splot.local', zdjecie: null, rola, token: null })
+    ? (rola) => zapisz({ id: 'demo-' + rola, imie: 'Test ' + ROLE[rola], email: 'demo@splot.local', zdjecie: null, rola, token: null, ...(rola === 'jst' && { powiat: 'myślenicki' }) })
     : null
 
+  // PATCH /api/me – np. powiat, za który odpowiada urzędnik JST
+  const ustawProfil = (zmiany) => zapisz({ ...uzytkownik, ...zmiany })
+
   return (
-    <AuthContext.Provider value={{ uzytkownik, zalogujGoogle, zalogujDemo, wyloguj, zmienRoleDemo }}>
+    <AuthContext.Provider value={{ uzytkownik, zalogujGoogle, zalogujDemo, wyloguj, zmienRoleDemo, ustawProfil }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,9 +1,12 @@
+import { Link } from 'react-router-dom'
 import { obszarPoId } from '../data/obszary.js'
+import { useAuth } from '../auth/AuthContext.jsx'
 
 // Karta innowacji z Biblioteki ROPS – dokładnie to, co zwraca backend:
 // tytuł, krótki opis, załączniki, link „czytaj więcej” (+ opcjonalnie film).
 // Używana w wyszukiwarce, Zasobniku i na stronach obszarów.
 export default function KartaBiblioteki({ innowacja: i, podobienstwo, powody }) {
+  const { uzytkownik: ja } = useAuth()
   return (
     <article className="bg-white border border-line rounded-2xl p-5 flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
@@ -41,7 +44,14 @@ export default function KartaBiblioteki({ innowacja: i, podobienstwo, powody }) 
         </ul>
       )}
 
-      <a href={i.url} className="self-start min-h-11 inline-flex items-center font-bold">Czytaj więcej →</a>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-auto">
+        <a href={i.url} className="min-h-11 inline-flex items-center font-bold">Czytaj więcej →</a>
+        {/* Gmina: rozmowa z ROPS o wdrożeniu (docelowo: Middleman dopasuje innowację do zasobów gminy) */}
+        {ja?.rola === 'jst' && (
+          <Link to={`/panel?wdroz=${i.id}`} className="min-h-11 px-4 inline-flex items-center rounded-lg bg-clay text-white font-bold no-underline">Chcę wdrożyć u nas</Link>
+        )}
+        <Link to={`/tester?ocen=${i.id}`} className="min-h-11 inline-flex items-center font-bold text-muted">Oceń</Link>
+      </div>
     </article>
   )
 }

@@ -24,15 +24,18 @@ export function wypelnijZFiszki(zrodlo, f, canva = {}) {
     case 'problem':
       return [
         /[.!?]$/.test(f.problem.trim()) ? f.problem.trim() : f.problem.trim() + '.',
-        `Problem występuje w pow. ${f.powiat}${obszar ? ` i dotyczy obszaru „${obszar.nazwa}”` : ''}.`,
-        `Ocena mieszkańców: ${znajdz(INTENSYWNOSC, f.intensywnosc)?.nazwa.toLowerCase() || '—'}, występuje ${znajdz(CZESTOTLIWOSC, f.czestotliwosc)?.nazwa.toLowerCase() || '—'}.`,
-      ].join(' ')
-    case 'odbiorcy':
-      return `Odbiorcy: ${(f.grupy || []).join(', ')}. Skala: ${znajdz(SKALA, f.skala)?.nazwa.toLowerCase() || '—'} (${znajdz(SKALA, f.skala)?.opis || ''}).`
+        (f.powiat || obszar) && `Problem ${f.powiat ? `występuje w pow. ${f.powiat}` : 'występuje w Małopolsce'}${obszar ? ` i dotyczy obszaru „${obszar.nazwa}”` : ''}.`,
+        f.intensywnosc && `Ocena mieszkańców: ${znajdz(INTENSYWNOSC, f.intensywnosc)?.nazwa.toLowerCase()}, występuje ${znajdz(CZESTOTLIWOSC, f.czestotliwosc)?.nazwa.toLowerCase() || '—'}.`,
+      ].filter(Boolean).join(' ')
+    case 'odbiorcy': {
+      const grupy = [...(f.grupy || []), f.grupaInna].filter(Boolean).join(', ')
+      const skala = znajdz(SKALA, f.skala)
+      return `Odbiorcy: ${grupy}.${skala ? ` Skala: ${skala.nazwa.toLowerCase()} (${skala.opis}).` : ''}`
+    }
     case 'rozwiazanie':
-      return `${f.tytul}. ${f.opis}`
+      return [`${f.tytul}. ${f.opis}`, f.istota && `Nowość: ${f.istota}`].filter(Boolean).join(' ')
     case 'etap':
-      return `Obecny etap: ${ETAPY.find((e) => e.nr === f.etap)?.nazwa || '—'}. Pomysł ma ${f.poparcia || 0} poparć mieszkańców na platformie Małopolski Splot.`
+      return `Obecny etap: ${ETAPY.find((e) => e.nr === f.etap)?.nazwa || '—'}. Pomysł ma ${(f.poparcia || 0) + (f.poparli?.length || 0)} poparć mieszkańców na platformie Małopolski Splot.`
     case 'zasoby':
       return [
         f.szuka && `Potrzebujemy: ${f.szuka}.`,
