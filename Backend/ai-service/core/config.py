@@ -4,6 +4,8 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SERVICE_DIR = Path(__file__).resolve().parents[1]
+# Lokalnie: HubOfInnovations/Dane. W kontenerze (/app) nie ma katalogu wyżej — tam ustaw SPLOT_DANE_DIR.
+DEFAULT_DANE_DIR = SERVICE_DIR.parents[1] / "Dane" if len(SERVICE_DIR.parents) > 1 else Path("/dane")
 
 
 class Settings(BaseSettings):
@@ -15,7 +17,9 @@ class Settings(BaseSettings):
     vector_db_path: Path = SERVICE_DIR / "vector_db"  # VECTOR_DB_PATH
     collection: str = "innowacje"  # COLLECTION — fragmenty
     profiles_collection: str = "innowacje_profile"  # PROFILES_COLLECTION — 1 dokument na innowację
-    splot_dane_dir: Path = SERVICE_DIR.parents[1] / "Dane"  # SPLOT_DANE_DIR — pakiet splot_dane (Obserwator)
+    splot_dane_dir: Path = DEFAULT_DANE_DIR  # SPLOT_DANE_DIR — pakiet splot_dane (Obserwator)
+    innovations_api_url: str = "http://127.0.0.1:8081"  # INNOVATIONS_API_URL — serwis innovations (Java)
+    innovations_timeout: float = 3.0  # INNOVATIONS_TIMEOUT — sekundy; po nim /search zwraca wyniki bez szczegółów
     observer_db_path: Path | None = None  # OBSERVER_DB_PATH — domyślnie Dane/data/obserwator.sqlite
 
 

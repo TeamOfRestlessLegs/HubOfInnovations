@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
 
+from core.innovations_client import InnovationsClient
 from core.observer_store import ObserverStore
 from core.vector_store import VectorStore
 
@@ -21,3 +22,10 @@ def get_observer(request: Request) -> ObserverStore:
 
 
 Observer = Annotated[ObserverStore, Depends(get_observer)]
+
+
+def get_innovations(request: Request) -> InnovationsClient:
+    return request.app.state.innovations
+
+
+Innovations = Annotated[InnovationsClient, Depends(get_innovations)]

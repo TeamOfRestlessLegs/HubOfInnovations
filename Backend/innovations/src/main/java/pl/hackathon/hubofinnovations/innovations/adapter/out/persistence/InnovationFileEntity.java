@@ -18,16 +18,16 @@ public class InnovationFileEntity {
     @Column(name = "kind", nullable = false)
     private String kind;
 
-    @Column(name = "file_name", nullable = false)
+    @Column(name = "file_name", nullable = false, columnDefinition = "TEXT")
     private String fileName;
 
-    @Column(name = "source_url")
+    @Column(name = "source_url", columnDefinition = "TEXT")
     private String sourceUrl;
 
-    @Column(name = "path_in_zip")
+    @Column(name = "path_in_zip", columnDefinition = "TEXT")
     private String pathInZip;
 
-    @Column(name = "storage_path")
+    @Column(name = "storage_path", columnDefinition = "TEXT")
     private String storagePath;
 
     @Column(name = "size_bytes")
