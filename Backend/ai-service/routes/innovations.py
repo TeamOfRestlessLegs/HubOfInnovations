@@ -6,7 +6,9 @@ from fastapi.responses import JSONResponse
 
 from core.deps import Analyzer, Innovations, Store
 from core.vector_store import InnovationNotFound
-from model.analysis import AnalysisByNameRequest, BenchmarkRequest, Candidate, Comparison, InnovationAnalysis
+from model.analysis import (
+    AmbiguousNameResponse, AnalysisByNameRequest, BenchmarkRequest, Candidate, Comparison, InnovationAnalysis,
+)
 from model.innovations import SearchRequest, SearchResponse
 
 innovationsRoute = APIRouter(prefix="/innovations", tags=["innovations"])
@@ -44,7 +46,8 @@ async def similarInnovations(
 
 NAME_MATCH_MIN_GAP = 0.15  # o ile pierwszy wynik musi wyprzedzać drugi, żeby uznać nazwę za jednoznaczną
 
-AMBIGUOUS = {300: {"description": "Nazwa pasuje do kilku innowacji — wybierz jedną z `candidates`"}}
+AMBIGUOUS = {409: {"model": AmbiguousNameResponse,
+                   "description": "Nazwa pasuje do kilku innowacji — wybierz jedną z `candidates`"}}
 
 
 @innovationsRoute.post("/analysis", response_model=InnovationAnalysis, responses=AMBIGUOUS)
@@ -105,11 +108,12 @@ async def _resolve_name(name: str, store) -> str | list[str]:
 
 
 def _ambiguous(innovation_ids: list[str], store) -> JSONResponse:
-    candidates = [Candidate(id=i, **store.innovation_meta(i)).model_dump() for i in innovation_ids]
-    return JSONResponse(status_code=300, content={
-        "detail": "Nazwa pasuje do kilku innowacji — podaj dokładniejszą nazwę albo użyj GET /innovations/{category}/{slug}/analysis",
-        "candidates": candidates,
-    })
+    candidates = [Candidate(id=i, **store.innovation_meta(i)) for i in innovation_ids]
+    body = AmbiguousNameResponse(
+        detail="Nazwa pasuje do kilku innowacji — podaj dokładniejszą nazwę albo użyj GET /innovations/{category}/{slug}/analysis",
+        candidates=candidates,
+    )
+    return JSONResponse(status_code=409, content=body.model_dump())
 
 
 async def _analyze(innovation_id: str, analyzer) -> dict:

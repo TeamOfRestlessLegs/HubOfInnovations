@@ -147,6 +147,12 @@ class Candidate(BaseModel):
     category: str
 
 
+class AmbiguousNameResponse(BaseModel):
+    """409 z POST /innovations/analysis — nazwa pasuje do kilku innowacji."""
+    detail: str
+    candidates: list[Candidate]
+
+
 class ComparisonRow(BaseModel):
     id: str
     title: str
