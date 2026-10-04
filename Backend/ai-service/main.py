@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -22,17 +21,13 @@ async def lifespan(app: FastAPI):
         settings.vector_db_path, settings.collection, settings.profiles_collection, openai
     )
     # Obserwator jest opcjonalny: bez bazy / pakietu splot_dane działa reszta serwisu, a /observer zwraca 503
-    app.state.observer, app.state.observer_error, warm_up = None, None, None
+    app.state.observer, app.state.observer_error = None, None
     try:
-        app.state.observer = ObserverStore(settings.splot_dane_dir, settings.observer_db_path)
-        # model embeddingów Obserwatora ładuje się w tle – pierwsze wyszukiwanie nie czeka
-        warm_up = asyncio.create_task(asyncio.to_thread(app.state.observer.warm_up))
+        app.state.observer = ObserverStore(settings.splot_dane_dir, settings.observer_db_path, settings.openai_key)
     except RuntimeError as e:
         app.state.observer_error = str(e)
         logging.getLogger(__name__).warning("Obserwator niedostępny: %s", e)
     yield
-    if warm_up:
-        warm_up.cancel()
     await openai.close()
 
 

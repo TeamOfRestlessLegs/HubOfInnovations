@@ -12,7 +12,7 @@ class CommuneNotFound(Exception):
 
 
 class SearchUnavailable(Exception):
-    """Wyszukiwanie wektorowe nie działa: brak indeksu albo pakietów sqlite-vec / sentence-transformers."""
+    """Wyszukiwanie wektorowe nie działa: brak indeksu, pakietu sqlite-vec, klucza OpenAI albo błąd API."""
 
 
 COVERAGE = "województwo małopolskie"   # Obserwator ROPS Kraków obejmuje tylko gminy i powiaty Małopolski
@@ -22,11 +22,11 @@ class ObserverStore:
     """Dane z Internetowego Obserwatora Statystyk Społecznych ROPS — nakładka na pakiet Dane/splot_dane.
 
     Baza SQLite (Dane/data/obserwator.sqlite) ma gminy, wskaźniki z wartościami i indeks wektorowy (sqlite-vec,
-    lokalny model multilingual-e5-small) — budują je `python -m splot_dane scrape` i `python -m splot_dane indeks`.
+    embeddingi OpenAI text-embedding-3-small) — budują je `python -m splot_dane scrape` i `python -m splot_dane indeks`.
     Połączenia SQLite nie są współdzielone między wątkami, więc każde zapytanie otwiera własne (w wątku roboczym).
     """
 
-    def __init__(self, splot_dane_dir: Path, db_path: Path | None = None):
+    def __init__(self, splot_dane_dir: Path, db_path: Path | None = None, openai_key: str | None = None):
         if not (splot_dane_dir / "splot_dane").exists():
             raise RuntimeError(f"Brak pakietu splot_dane w {splot_dane_dir} — ustaw SPLOT_DANE_DIR")
         if str(splot_dane_dir) not in sys.path:
@@ -36,6 +36,8 @@ class ObserverStore:
         from splot_dane.obserwator.katalog import wczytaj_obszary
 
         self._api, self._wektory, self._Magazyn, self._obszary = api, wektory, Magazyn, wczytaj_obszary
+        # embeddingi zapytań liczy OpenAI (ten sam model co indeks w bazie) – klucz z ustawień serwisu
+        wektory.ustaw_klucz_openai(openai_key)
         self._db_path = Path(db_path or SCIEZKA_BAZY)
         if not self._db_path.exists():
             raise RuntimeError(f"Brak bazy Obserwatora w {self._db_path} — uruchom: python -m splot_dane scrape")
@@ -65,13 +67,6 @@ class ObserverStore:
 
     async def suggest_areas(self, query: str, limit: int) -> list[dict]:
         return await asyncio.to_thread(self._suggest_areas, query, limit)
-
-    def warm_up(self) -> None:
-        """Ładuje model embeddingów (pierwsze wyszukiwanie nie czeka kilku sekund). Brak pakietów — tylko log."""
-        try:
-            self._wektory.zakoduj(["rozgrzewka"], zapytanie=True)
-        except Exception as e:
-            log.warning("Wyszukiwanie wektorowe Obserwatora niedostępne: %s", e)
 
     # ------------------------------------------------------------------ wewnętrzne
 
@@ -169,8 +164,12 @@ class ObserverStore:
             return fn()
         except self._wektory.BrakIndeksu as e:
             raise SearchUnavailable(str(e)) from e
-        except RuntimeError as e:   # brak sqlite-vec / sentence-transformers
+        except RuntimeError as e:   # brak sqlite-vec / klucza OpenAI
             raise SearchUnavailable(str(e)) from e
+        except Exception as e:      # błąd API OpenAI (sieć, limit, zły klucz) – nie 500, tylko czytelne 503
+            if type(e).__module__.startswith("openai"):
+                raise SearchUnavailable(f"błąd OpenAI: {e}") from e
+            raise
 
     def _search_indicators(self, query: str, limit: int, commune_id: int | None, local_data_only: bool) -> list[dict]:
         with self._magazyn() as m:

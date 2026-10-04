@@ -1,7 +1,9 @@
 """Indeks wektorowy danych z Obserwatora: opis problemu -> pasujące wskaźniki i obszar wyzwania.
 
-* embeddingi: lokalny model wielojęzyczny (domyślnie intfloat/multilingual-e5-small, 384 wymiary,
-  zmiana przez zmienną SPLOT_MODEL_WEKTOROWY) – bez klucza API, po pierwszym pobraniu bez sieci,
+* embeddingi: domyślnie OpenAI text-embedding-3-small (1536 wymiarów; ten sam model co wyszukiwanie innowacji
+  w ai-service) – klucz ze zmiennej OPENAI_KEY / OPENAI_API_KEY albo z ustaw_klucz_openai().
+  Model lokalny bez klucza API: SPLOT_MODEL_WEKTOROWY=intfloat/multilingual-e5-small (pip install .[wektory]).
+  Po zmianie modelu trzeba przebudować indeks: python -m splot_dane indeks,
 * magazyn: rozszerzenie sqlite-vec w tej samej bazie data/obserwator.sqlite (tabele vec0),
 * indeksowane teksty: nazwa, kategoria (+ słowa kluczowe z config/kategorie_wskaznikow.yaml) i opis
   każdego wskaźnika z katalogu oraz obszary wyzwań z config/obszary_wyzwan.yaml.
@@ -27,7 +29,10 @@ from splot_dane import KATALOG_KONFIGURACJI
 from splot_dane.magazyn import Magazyn
 from splot_dane.obserwator.katalog import wczytaj_obszary
 
-MODEL_DOMYSLNY = "intfloat/multilingual-e5-small"
+MODEL_DOMYSLNY = "text-embedding-3-small"
+PACZKA_OPENAI = 100   # tekstów w jednym zapytaniu o embeddingi
+
+_klucz_openai: str | None = None
 
 
 class BrakIndeksu(RuntimeError):
@@ -38,6 +43,38 @@ class BrakIndeksu(RuntimeError):
 
 def nazwa_modelu() -> str:
     return os.environ.get("SPLOT_MODEL_WEKTOROWY") or MODEL_DOMYSLNY
+
+
+def ustaw_klucz_openai(klucz: str | None) -> None:
+    """Klucz API dla modeli OpenAI (np. z ustawień ai-service); bez tego – zmienne OPENAI_KEY / OPENAI_API_KEY."""
+    global _klucz_openai
+    _klucz_openai = klucz or None
+    _klient_openai.cache_clear()
+
+
+def _czy_openai(nazwa: str) -> bool:
+    return nazwa.startswith("text-embedding-")
+
+
+@lru_cache(maxsize=1)
+def _klient_openai():
+    try:
+        from openai import OpenAI
+    except ImportError as e:   # pragma: no cover - zależy od środowiska
+        raise RuntimeError("Brak pakietu openai. Zainstaluj: pip install openai") from e
+    klucz = _klucz_openai or os.environ.get("OPENAI_KEY") or os.environ.get("OPENAI_API_KEY")
+    if not klucz:
+        raise RuntimeError("Brak klucza OpenAI – ustaw OPENAI_KEY (albo SPLOT_MODEL_WEKTOROWY na model lokalny)")
+    return OpenAI(api_key=klucz)
+
+
+def _zakoduj_openai(teksty: list[str], nazwa: str) -> list[list[float]]:
+    # wektory OpenAI są już znormalizowane – podobieństwo kosinusowe działa bez dodatkowych kroków
+    klient, wynik = _klient_openai(), []
+    for i in range(0, len(teksty), PACZKA_OPENAI):
+        odp = klient.embeddings.create(model=nazwa, input=teksty[i:i + PACZKA_OPENAI])
+        wynik += [list(d.embedding) for d in sorted(odp.data, key=lambda d: d.index)]
+    return wynik
 
 
 @lru_cache(maxsize=2)
@@ -56,6 +93,8 @@ def _prefiksy(nazwa: str) -> tuple[str, str]:
 
 def zakoduj(teksty: list[str], zapytanie: bool, nazwa: str | None = None) -> list[list[float]]:
     nazwa = nazwa or nazwa_modelu()
+    if _czy_openai(nazwa):
+        return _zakoduj_openai(teksty, nazwa)
     prefiks = _prefiksy(nazwa)[0 if zapytanie else 1]
     wektory = _model(nazwa).encode([prefiks + t for t in teksty], normalize_embeddings=True, batch_size=32)
     return [list(map(float, w)) for w in wektory]

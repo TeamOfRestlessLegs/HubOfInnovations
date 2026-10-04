@@ -1,7 +1,8 @@
 """Endpointy /observer na prawdziwej bazie Dane/data/obserwator.sqlite (tylko odczyt).
 
-Aplikacja testowa ma sam router Obserwatora – bez OpenAI i ChromaDB. Testy wyszukiwania wektorowego
-pomijają się, gdy brak sqlite-vec / sentence-transformers (pip install -r requirements.txt).
+Aplikacja testowa ma sam router Obserwatora – bez ChromaDB. Testy wyszukiwania wektorowego (embeddingi OpenAI)
+pomijają się, gdy brak sqlite-vec albo zmiennej OPENAI_KEY; indeks w bazie musi być zbudowany tym samym modelem
+(python -m splot_dane indeks).
 
   python -m pytest tests/test_observer.py      # z katalogu ai-service (inna baza: OBSERVER_DB_PATH=…)
 """
@@ -23,8 +24,8 @@ from routes.observer import observerRoute  # noqa: E402
 
 DANE = SERVICE_DIR.parents[1] / "Dane"
 TARNOW_WIEJSKA = 153
-WEKTORY = all(importlib.util.find_spec(p) for p in ("sqlite_vec", "sentence_transformers"))
-wektory = pytest.mark.skipif(not WEKTORY, reason="brak sqlite-vec / sentence-transformers")
+WEKTORY = importlib.util.find_spec("sqlite_vec") is not None and bool(os.environ.get("OPENAI_KEY"))
+wektory = pytest.mark.skipif(not WEKTORY, reason="brak sqlite-vec albo OPENAI_KEY")
 
 
 @pytest.fixture(scope="module")
@@ -32,7 +33,7 @@ def c():
     app = FastAPI()
     app.include_router(observerRoute)
     baza = os.environ.get("OBSERVER_DB_PATH")
-    app.state.observer = ObserverStore(DANE, Path(baza) if baza else None)
+    app.state.observer = ObserverStore(DANE, Path(baza) if baza else None, os.environ.get("OPENAI_KEY"))
     with TestClient(app) as klient:
         yield klient
 

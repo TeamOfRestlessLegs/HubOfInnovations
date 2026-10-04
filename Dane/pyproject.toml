@@ -16,7 +16,8 @@ dependencies = [
 dev = ["pytest>=8"]
 llm = ["anthropic>=1.0"]   # tylko dla flagi --llm
 pdf = ["reportlab>=4", "pypdf>=4", "pdfplumber>=0.11"]   # wpisanie wniosku w oryginalny wzór PDF
-wektory = ["sqlite-vec>=0.1.6", "sentence-transformers>=3"]   # indeks wektorowy (model lokalny, ~0,5 GB z PyTorch)
+wektory = ["sqlite-vec>=0.1.6", "openai>=1.40"]   # indeks wektorowy (embeddingi OpenAI, klucz OPENAI_KEY)
+wektory-lokalne = ["sqlite-vec>=0.1.6", "sentence-transformers>=3"]   # model lokalny bez klucza (~0,5 GB z PyTorch)
 wzory = ["pypdf>=4"]       # odczyt PDF w `wniosek zaproponuj-szablon` (bez tego: program pdftotext)
 
 [tool.setuptools.packages.find]
