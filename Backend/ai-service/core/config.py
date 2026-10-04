@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     innovations_api_url: str = "http://127.0.0.1:8081"  # INNOVATIONS_API_URL — serwis innovations (Java)
     innovations_timeout: float = 3.0  # INNOVATIONS_TIMEOUT — sekundy; po nim /search zwraca wyniki bez szczegółów
     observer_db_path: Path | None = None  # OBSERVER_DB_PATH — domyślnie Dane/data/obserwator.sqlite
+    middleman_model: str = "gpt-4o-mini"  # MIDDLEMAN_MODEL — model OpenAI piszący plany wdrożenia
+    assistant_model: str = "gpt-4o-mini"  # ASSISTANT_MODEL — model OpenAI asystenta wniosku
 
 
 @lru_cache

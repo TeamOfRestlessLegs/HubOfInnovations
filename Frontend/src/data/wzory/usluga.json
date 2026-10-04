@@ -1,0 +1,850 @@
+{
+ "pola": [
+  {
+   "id": "nazwa_innowacji",
+   "etykieta": "Nazwa wybranej do wdrożenia innowacji społecznej",
+   "opis": "Podaj nazwę innowacji społecznej, którą zamierzasz wdrożyć.",
+   "limit": 200,
+   "canva": [],
+   "fiszka": [
+    "opis"
+   ],
+   "pytania": [],
+   "miejsce": {
+    "page": 0,
+    "y": 413.1,
+    "y_end": 413.1,
+    "x0": 76.6,
+    "x1": 524.6,
+    "box": false
+   },
+   "kotwica": "I. NAZWA WYBRANEJ DO WDROŻENIA INNOWACJI SPOŁECZNEJ:",
+   "po": "e. Głuchy czytelnik w bibliotece"
+  },
+  {
+   "id": "doswiadczenie_wnioskodawcy",
+   "etykieta": "Doświadczenie wnioskodawcy",
+   "opis": "Opisz posiadane doświadczenie w obszarze pracy z grupą docelową, udzielaniu podobnej formy wsparcia oraz działalności w obszarze innowacji społecznych.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [
+    "grupy"
+   ],
+   "pytania": [],
+   "miejsce": {
+    "page": 2,
+    "y": 139.7,
+    "y_end": 162.8,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "II. DOŚWIADCZENIE WNIOSKODAWCY",
+   "po": ""
+  },
+  {
+   "id": "tytul_uslugi",
+   "etykieta": "Tytuł innowacyjnej usługi społecznej",
+   "opis": "Podaj tytuł innowacyjnej usługi społecznej.",
+   "limit": 200,
+   "canva": [],
+   "fiszka": [
+    "opis"
+   ],
+   "pytania": [],
+   "miejsce": {
+    "page": 2,
+    "y": 231.0,
+    "y_end": 254.1,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "1. TYTUŁ INNOWACYJNEJ USŁUGI SPOŁECZNEJ",
+   "po": ""
+  },
+  {
+   "id": "opis_uslugi",
+   "etykieta": "Opis innowacyjnej usługi społecznej",
+   "opis": "Opisz, na czym będzie polegała innowacyjna usługa społeczna, jakie ma cele oraz jak planujesz wykorzystać wybraną innowację społeczną.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [
+    "opis"
+   ],
+   "pytania": [],
+   "miejsce": {
+    "page": 2,
+    "y": 364.5,
+    "y_end": 387.4,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "2. OPIS INNOWACYJNEJ USŁUGI SPOŁECZNEJ",
+   "po": "wykorzystanie wybranej innowacji społecznej?)"
+  },
+  {
+   "id": "daty_realizacji",
+   "etykieta": "Daty realizacji innowacyjnej usługi społecznej",
+   "opis": "Podaj daty rozpoczęcia i zakończenia realizacji innowacyjnej usługi społecznej (nie dłużej niż 18 miesięcy).",
+   "limit": 300,
+   "canva": [],
+   "fiszka": [
+    "etap"
+   ],
+   "pytania": [
+    "jakie_sa_planowane_daty_rozpoczecia_i_za"
+   ],
+   "miejsce": {
+    "page": 2,
+    "y": 438.3,
+    "y_end": 438.3,
+    "x0": 70.8,
+    "x1": 514.9,
+    "box": false
+   },
+   "kotwica": "3. DATY REALIZACJI INNOWACJNEJ USŁUGI SPOŁECZNEJ:",
+   "po": "(nie dłużej niż 18 m-cy)"
+  },
+  {
+   "id": "grupa_docelowa",
+   "etykieta": "Grupa docelowa, do której kierowana będzie innowacyjna usługa społeczna",
+   "opis": "Opisz grupę docelową, do której kierowana będzie innowacyjna usługa społeczna.",
+   "limit": 2000,
+   "canva": [
+    "uzytkownik"
+   ],
+   "fiszka": [
+    "grupy"
+   ],
+   "pytania": [],
+   "miejsce": {
+    "page": 2,
+    "y": 748.9,
+    "y_end": 748.9,
+    "x0": 70.8,
+    "x1": 514.9,
+    "box": false
+   },
+   "kotwica": "4. GRUPA DOCELOWA, DO KTÓREJ KIEROWANA",
+   "po": "terenie województwa małopolskiego."
+  },
+  {
+   "id": "diagnoza_problemu",
+   "etykieta": "Diagnoza problemu i opis odbiorców usługi",
+   "opis": "Opisz problem, na jaki odpowiada usługa, oraz charakterystykę grupy docelowej, w tym problemy i potrzeby grupy docelowej.",
+   "limit": 2000,
+   "canva": [
+    "skala",
+    "intensywnosc",
+    "czestotliwosc"
+   ],
+   "fiszka": [
+    "problem"
+   ],
+   "pytania": [
+    "jakie_sa_glowne_problemy_i_potrzeby_grup",
+    "jakie_zrodla_informacji_i_danych_dotycza",
+    "czy_odbiorcy_uslugi_to_grupy_wykluczone_"
+   ],
+   "miejsce": {
+    "page": 3,
+    "y": 191.6,
+    "y_end": 214.7,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "5. DIAGNOZA PROBLEMU I OPIS ODBIORCÓW USŁUGI",
+   "po": "wykluczone społecznie i dlaczego?)"
+  },
+  {
+   "id": "opis_rekrutacji",
+   "etykieta": "Opis sposobu rekrutacji, w tym kryteria oraz ramy czasowe rekrutacji odbiorców usługi",
+   "opis": "Opisz sposób rekrutacji odbiorców usługi, w tym kryteria oraz ramy czasowe rekrutacji.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [
+    "grupy"
+   ],
+   "pytania": [],
+   "miejsce": {
+    "page": 3,
+    "y": 281.1,
+    "y_end": 304.1,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "6. OPIS SPOSOBU REKRUTACJI, W TYM KRYTERIA",
+   "po": ""
+  },
+  {
+   "id": "liczba_osob",
+   "etykieta": "Liczba osób objętych wsparciem grantu",
+   "opis": "Podaj liczbę osób objętych wsparciem grantu oraz liczbę osób objętych usługą społeczną.",
+   "limit": 300,
+   "canva": [],
+   "fiszka": [
+    "grupy"
+   ],
+   "pytania": [
+    "jaka_liczbe_osob_planujesz_objac_wsparci"
+   ],
+   "miejsce": {
+    "page": 3,
+    "y": 392.4,
+    "y_end": 415.5,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "7. LICZBA OSÓB OBJĘTYCH WSPARCIEM GRANTU",
+   "po": ""
+  },
+  {
+   "id": "obszar_wdrazania",
+   "etykieta": "Obszar wdrażania innowacyjnej usługi społecznej",
+   "opis": "Opisz obszar, na którym będzie wdrażana innowacyjna usługa społeczna.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [
+    "powiat"
+   ],
+   "pytania": [],
+   "miejsce": {
+    "page": 3,
+    "y": 503.8,
+    "y_end": 526.9,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "8. OBSZAR WDRAŻANIA INNOWACYJNEJ USŁUGI SPOŁECZNEJ",
+   "po": ""
+  },
+  {
+   "id": "oczekiwane_efekty",
+   "etykieta": "Oczekiwane efekty realizacji grantu",
+   "opis": "Opisz oczekiwane efekty realizacji grantu.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [
+    "jakie_efekty_planujesz_osiagnac_dzieki_r"
+   ],
+   "miejsce": {
+    "page": 3,
+    "y": 593.2,
+    "y_end": 616.3,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "9. OCZEKIWANE EFEKTY REALIZACJI GRANTU",
+   "po": ""
+  },
+  {
+   "id": "plan_dzialania",
+   "etykieta": "Plan działania i koszty",
+   "opis": "Opisz plan działania oraz koszty związane z wdrożeniem innowacyjnej usługi społecznej.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [
+    "jakie_dzialania_planujesz_w_ramach_wdroz",
+    "jakie_sa_szacowane_koszty_tych_dzialan"
+   ],
+   "miejsce": {
+    "page": 6,
+    "y": 70.3,
+    "y_end": 98.7,
+    "x0": 69.6,
+    "x1": 529.7,
+    "box": true
+   },
+   "kotwica": "10. PLAN DZIAŁANIA I KOSZTY",
+   "po": ""
+  },
+  {
+   "id": "wnioskowana_kwota",
+   "etykieta": "Wnioskowana kwota grantu",
+   "opis": "Podaj wnioskowaną, całkowitą kwotę grantu.",
+   "limit": 300,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [
+    "jaka_kwote_grantu_zamierzasz_wnioskowac"
+   ],
+   "miejsce": {
+    "page": 6,
+    "y": 187.1,
+    "y_end": 210.0,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "11. WNIOSKOWANA KWOTA GRANTU",
+   "po": ""
+  },
+  {
+   "id": "cross_financing",
+   "etykieta": "Czy przewidywane są wydatki w ramach cross-financingu?",
+   "opis": "Określ, czy przewidujesz wydatki w ramach cross-financingu.",
+   "limit": 1000,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [
+    "jakie_wydatki_przewidujesz_w_ramach_cros"
+   ],
+   "miejsce": {
+    "page": 6,
+    "y": 276.5,
+    "y_end": 299.5,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "12. CZY PRZEWIDYWANE SĄ WYDATKI W RAMACH CROSS-FINANCINGU?",
+   "po": ""
+  },
+  {
+   "id": "utrzymanie_trwalosci",
+   "etykieta": "Opis koncepcji utrzymania trwałości",
+   "opis": "Opisz koncepcję utrzymania trwałości efektów wdrożonej innowacyjnej usługi społecznej.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [
+    "jakie_dzialania_podejmiesz_aby_zapewnic_"
+   ],
+   "miejsce": {
+    "page": 6,
+    "y": 395.8,
+    "y_end": 418.9,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "13. OPIS KONCEPCJI UTRZYMANIA TRWAŁOŚCI",
+   "po": ""
+  },
+  {
+   "id": "zgodnosc_z_zasadami",
+   "etykieta": "Zgodność z zasadami horyzontalnymi",
+   "opis": "Opisz, w jaki sposób przestrzegasz zasad horyzontalnych.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [
+    "jakie_zasady_horyzontalne_beda_przestrze"
+   ],
+   "miejsce": {
+    "page": 6,
+    "y": 643.2,
+    "y_end": 673.1,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "IV. ZGODNOŚĆ Z ZASADAMI HORYZONTALNYMI",
+   "po": ""
+  },
+  {
+   "id": "utrzymanie_efektow",
+   "etykieta": "Koncepcja utrzymania efektów wdrożenia innowacji społecznej",
+   "opis": "Opisz sposób utrzymania efektów wdrożonej innowacyjnej usługi społecznej.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [],
+   "miejsce": {
+    "page": 7,
+    "y": 70.3,
+    "y_end": 94.4,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "V. KONCEPCJA UTRZYMANIA EFEKTÓW WDROŻENIA",
+   "po": ""
+  },
+  {
+   "id": "deinstytucjonalizacja",
+   "etykieta": "Uzasadnienie spełnienia zasady deinstytucjonalizacji",
+   "opis": "Uzasadnij, w jaki sposób Twoja koncepcja usług społecznych spełnia zasadę deinstytucjonalizacji.",
+   "limit": 2000,
+   "canva": [],
+   "fiszka": [],
+   "pytania": [],
+   "miejsce": {
+    "page": 7,
+    "y": 152.6,
+    "y_end": 176.7,
+    "x0": 71.3,
+    "x1": 524.0,
+    "box": true
+   },
+   "kotwica": "VI. Uzasadnienie spełnienia zasady deinstytucjonalizacji",
+   "po": ""
+  }
+ ],
+ "pytania": [
+  {
+   "id": "jakie_sa_planowane_daty_rozpoczecia_i_za",
+   "tresc": "Jakie są planowane daty rozpoczęcia i zakończenia realizacji innowacyjnej usługi?",
+   "podpowiedz": "Np. od 01.01.2024 do 30.06.2025"
+  },
+  {
+   "id": "jakie_sa_glowne_problemy_i_potrzeby_grup",
+   "tresc": "Jakie są główne problemy i potrzeby grupy docelowej?",
+   "podpowiedz": "Np. brak dostępu do wsparcia psychologicznego"
+  },
+  {
+   "id": "jakie_zrodla_informacji_i_danych_dotycza",
+   "tresc": "Jakie źródła informacji i danych dotyczących grupy docelowej wykorzystasz?",
+   "podpowiedz": "Np. badania lokalne, raporty"
+  },
+  {
+   "id": "czy_odbiorcy_uslugi_to_grupy_wykluczone_",
+   "tresc": "Czy odbiorcy usługi to grupy wykluczone społecznie i dlaczego?",
+   "podpowiedz": "Np. osoby z niepełnosprawnościami, osoby w kryzysie"
+  },
+  {
+   "id": "jaka_liczbe_osob_planujesz_objac_wsparci",
+   "tresc": "Jaką liczbę osób planujesz objąć wsparciem?",
+   "podpowiedz": "Np. 50 osób"
+  },
+  {
+   "id": "jakie_efekty_planujesz_osiagnac_dzieki_r",
+   "tresc": "Jakie efekty planujesz osiągnąć dzięki realizacji grantu?",
+   "podpowiedz": "Np. poprawa jakości życia uczestników"
+  },
+  {
+   "id": "jakie_dzialania_planujesz_w_ramach_wdroz",
+   "tresc": "Jakie działania planujesz w ramach wdrożenia innowacyjnej usługi?",
+   "podpowiedz": "Np. szkolenia, warsztaty"
+  },
+  {
+   "id": "jakie_sa_szacowane_koszty_tych_dzialan",
+   "tresc": "Jakie są szacowane koszty tych działań?",
+   "podpowiedz": "Np. 1200 zł na szkolenie"
+  },
+  {
+   "id": "jaka_kwote_grantu_zamierzasz_wnioskowac",
+   "tresc": "Jaką kwotę grantu zamierzasz wnioskować?",
+   "podpowiedz": "Np. 50 000 zł"
+  },
+  {
+   "id": "jakie_wydatki_przewidujesz_w_ramach_cros",
+   "tresc": "Jakie wydatki przewidujesz w ramach cross-financingu?",
+   "podpowiedz": "Np. koszty administracyjne, szkolenia"
+  },
+  {
+   "id": "jakie_dzialania_podejmiesz_aby_zapewnic_",
+   "tresc": "Jakie działania podejmiesz, aby zapewnić trwałość efektów usługi?",
+   "podpowiedz": "Np. kontynuacja wsparcia, współpraca z lokalnymi organizacjami"
+  },
+  {
+   "id": "jakie_zasady_horyzontalne_beda_przestrze",
+   "tresc": "Jakie zasady horyzontalne będą przestrzegane w ramach realizacji grantu?",
+   "podpowiedz": "Np. zasada równości płci, dostępność dla osób z niepełnosprawnościami"
+  }
+ ],
+ "uklad": [
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 751.2,
+   "ciecia": [
+    53.049999999999955,
+    88.0,
+    111.6,
+    141.4,
+    167.4,
+    189.3,
+    211.3,
+    233.3,
+    255.3,
+    280.3,
+    305.3,
+    327.2,
+    349.2,
+    371.1,
+    393.1,
+    415.1,
+    437.1,
+    462.5,
+    488.2,
+    510.7,
+    539.2,
+    569.3,
+    593.5,
+    616.0,
+    638.2,
+    660.2,
+    682.1,
+    704.1,
+    726.1,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 762.0,
+   "ciecia": [
+    53.049999999999955,
+    91.0,
+    113.5,
+    135.9,
+    158.4,
+    180.9,
+    203.1,
+    225.3,
+    247.8,
+    270.3,
+    292.8,
+    315.0,
+    337.2,
+    359.8,
+    382.2,
+    404.6,
+    426.8,
+    449.1,
+    471.4,
+    499.6,
+    529.8,
+    553.9,
+    576.4,
+    598.9,
+    621.4,
+    643.8,
+    666.3,
+    694.8,
+    723.0,
+    745.0,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 767.9,
+   "ciecia": [
+    53.049999999999955,
+    90.3,
+    112.3,
+    157.9,
+    203.6,
+    244.3,
+    285.0,
+    306.9,
+    329.0,
+    373.7,
+    418.3,
+    446.3,
+    474.5,
+    502.9,
+    531.1,
+    553.1,
+    575.2,
+    597.1,
+    619.1,
+    641.1,
+    663.0,
+    685.0,
+    707.0,
+    728.9,
+    750.9,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 750.7,
+   "ciecia": [
+    53.049999999999955,
+    90.3,
+    112.3,
+    134.2,
+    156.2,
+    200.9,
+    245.6,
+    290.3,
+    335.0,
+    357.0,
+    401.7,
+    446.4,
+    468.4,
+    513.1,
+    557.8,
+    602.5,
+    651.2,
+    679.1,
+    703.2,
+    725.7,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 758.7,
+   "ciecia": [
+    53.049999999999955,
+    90.8,
+    112.9,
+    135.6,
+    158.1,
+    180.3,
+    202.3,
+    224.2,
+    246.2,
+    283.7,
+    321.5,
+    343.7,
+    365.6,
+    387.6,
+    409.5,
+    445.9,
+    482.5,
+    504.7,
+    526.7,
+    548.6,
+    570.7,
+    607.6,
+    644.7,
+    667.2,
+    689.1,
+    711.0,
+    733.2,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 765.3,
+   "ciecia": [
+    53.049999999999955,
+    91.0,
+    113.2,
+    135.2,
+    157.2,
+    179.1,
+    216.6,
+    254.4,
+    276.6,
+    298.5,
+    320.5,
+    342.5,
+    378.8,
+    415.4,
+    437.6,
+    459.7,
+    481.7,
+    503.6,
+    542.0,
+    582.2,
+    606.2,
+    628.4,
+    650.6,
+    673.1,
+    695.6,
+    718.0,
+    740.2,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 760.9,
+   "ciecia": [
+    53.049999999999955,
+    129.6,
+    151.6,
+    196.3,
+    245.0,
+    289.7,
+    334.4,
+    360.3,
+    405.1,
+    449.8,
+    475.2,
+    502.3,
+    526.4,
+    548.9,
+    570.8,
+    593.0,
+    615.6,
+    660.0,
+    707.4,
+    732.9,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 176.2,
+   "ciecia": [
+    53.049999999999955,
+    125.2,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 738.6,
+   "ciecia": [
+    53.049999999999955,
+    94.2,
+    120.2,
+    146.2,
+    172.2,
+    194.1,
+    216.1,
+    238.0,
+    260.1,
+    282.1,
+    304.1,
+    326.0,
+    348.0,
+    369.9,
+    391.9,
+    413.9,
+    435.8,
+    457.9,
+    479.9,
+    501.8,
+    523.8,
+    545.8,
+    567.7,
+    589.7,
+    611.7,
+    633.6,
+    655.6,
+    677.6,
+    699.6,
+    721.6,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 768.6,
+   "ciecia": [
+    53.049999999999955,
+    90.3,
+    112.3,
+    134.2,
+    160.2,
+    190.2,
+    220.1,
+    246.1,
+    268.1,
+    290.0,
+    312.0,
+    334.0,
+    356.0,
+    378.0,
+    399.9,
+    421.9,
+    443.9,
+    465.8,
+    487.8,
+    509.8,
+    531.8,
+    553.8,
+    575.8,
+    597.7,
+    619.7,
+    641.7,
+    663.6,
+    685.6,
+    707.6,
+    729.5,
+    751.5,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 770.9,
+   "ciecia": [
+    53.049999999999955,
+    90.3,
+    112.3,
+    134.2,
+    156.2,
+    178.2,
+    200.1,
+    222.1,
+    244.1,
+    266.0,
+    288.0,
+    310.0,
+    332.0,
+    354.0,
+    375.9,
+    397.9,
+    419.9,
+    441.8,
+    463.8,
+    485.8,
+    507.8,
+    529.8,
+    551.8,
+    573.7,
+    595.7,
+    617.7,
+    639.6,
+    661.6,
+    713.3,
+    759.9,
+    805.42
+   ]
+  },
+  {
+   "szer": 595.32,
+   "wys": 841.92,
+   "gora": 53.0,
+   "dol": 805.4,
+   "ostatni": 107.3,
+   "ciecia": [
+    53.049999999999955,
+    90.3,
+    805.42
+   ]
+  }
+ ]
+}

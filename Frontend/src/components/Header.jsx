@@ -16,7 +16,7 @@ const NAZWA_PANELU = { resident: 'Moje sprawy', jst: 'Panel gminy', ekspert: 'Pa
 export default function Header() {
   const { uzytkownik } = useAuth()
   return (
-    <header className="bg-white border-b border-line">
+    <header className="bg-white border-b border-line print:hidden">
       {/* Link „przejdź do treści” – pierwszy element dla klawiatury i czytników ekranu */}
       <a href="#tresc" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-ink focus:text-white focus:font-bold">Przejdź do treści</a>
       <div className="border-b border-line bg-ground">

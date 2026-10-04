@@ -12,6 +12,7 @@ import Logowanie from './pages/Logowanie.jsx'
 import Tester from './pages/Tester.jsx'
 import Pomysl from './pages/Pomysl.jsx'
 import Panel from './pages/Panel.jsx'
+import Wdrozenie from './pages/Wdrozenie.jsx'
 
 // Lista stron. Nowa strona = nowy plik w pages/ + jedna linijka tutaj.
 // Strony, które coś zapisują (kreator, panel, wniosek), wymagają logowania.
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/wniosek/:fiszkaId/:naborId" element={<WymagaLogowania><Wniosek /></WymagaLogowania>} />
         <Route path="/tester" element={<Tester />} />
         <Route path="/pomysl/:id" element={<Pomysl />} />
+        <Route path="/wdrozenie/:id" element={<WymagaLogowania><Wdrozenie /></WymagaLogowania>} />
       </Routes>
       </div>
     </>

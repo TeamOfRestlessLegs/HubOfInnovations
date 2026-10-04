@@ -11,18 +11,11 @@ import { DOMYSLNE_POLA, naborOtwarty } from '../data/nabory.js'
 import StatusWpisu, { STATUSY } from '../components/StatusWpisu.jsx'
 import SzczegolyFiszki from '../components/SzczegolyFiszki.jsx'
 import { policz } from '../data/policz.js'
-import { SEKCJE } from '../data/canva.js'
 import { liczbaPoparc } from '../data/watekFiszki.js'
 import { wczytajPdf } from '../data/plik.js'
 import WzorWniosku from '../components/WzorWniosku.jsx'
-
-// Odpowiedź z Canvy jako tekst (wybór → nazwa opcji, lista → po przecinku)
-const tekstOdpowiedzi = (p, v) => {
-  if (!v || (Array.isArray(v) && !v.length)) return '—'
-  if (p.typ === 'wybor') return p.opcje.find((o) => o.id === v)?.nazwa || v
-  if (Array.isArray(v)) return v.join(', ')
-  return v
-}
+import WniosekPdf from '../components/WniosekPdf.jsx'
+import PolaZWzoru from '../components/PolaZWzoru.jsx'
 
 const ZAKLADKI = [
   { id: 'kolejka', nazwa: 'Kolejka' },
@@ -323,13 +316,15 @@ function Nabory() {
   const { nabory, wnioski, dodajNabor, zamknijNabor, ocenWniosek, ustawWzorNaboru } = useDane()
   const puste = { nazwa: '', opis: '', kryteria: '', obszary: [], termin: '', wzor: null }
   const [nowy, setNowy] = useState(puste)
+  const [polaNowego, setPolaNowego] = useState(null)   // { pola, pytania } ze wzoru albo null = domyślny szablon
   const [otwartyWniosek, setOtwartyWniosek] = useState(null)
   const ustaw = (k, v) => setNowy({ ...nowy, [k]: v })
 
   function dodaj(e) {
     e.preventDefault()
-    dodajNabor({ ...nowy, pola: DOMYSLNE_POLA })
+    dodajNabor({ ...nowy, ...(polaNowego ? doZapisu(polaNowego) : { pola: DOMYSLNE_POLA, pytania: [], uklad: null }) })
     setNowy(puste)
+    setPolaNowego(null)
   }
 
   return (
@@ -352,6 +347,7 @@ function Nabory() {
               {n.wzor ? <WzorWniosku nabor={n} /> : <p className="text-[15px] text-clay-dark font-bold">Brak wzoru wniosku (PDF).</p>}
               <WyborPdf etykieta={n.wzor ? 'Podmień wzór' : 'Dodaj wzór wniosku (PDF)'} onWybierz={(w) => ustawWzorNaboru(n.id, w)} />
             </div>
+            <PolaNaboru n={n} maWnioski={wnioski.some((w) => w.naborId === n.id)} />
             <h3 className="font-bold mt-2">Złożone wnioski ({jegoWnioski.length})</h3>
             {jegoWnioski.length === 0 && <p className="text-muted">Jeszcze nikt nie złożył wniosku.</p>}
             <ul className="flex flex-col gap-2">
@@ -364,7 +360,7 @@ function Nabory() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button onClick={() => setOtwartyWniosek(otwartyWniosek === w.id ? null : w.id)} aria-expanded={otwartyWniosek === w.id} className="min-h-10 px-3 rounded-lg border-2 border-ink font-bold text-sm">
-                        {otwartyWniosek === w.id ? 'Zwiń' : 'Czytaj wniosek'}
+                        {otwartyWniosek === w.id ? 'Zwiń' : 'Czytaj wniosek (PDF)'}
                       </button>
                       {w.status === 'zlozony' && (
                         <>
@@ -374,31 +370,7 @@ function Nabory() {
                       )}
                     </div>
                   </div>
-                  {otwartyWniosek === w.id && (
-                    <dl className="flex flex-col gap-3 bg-white rounded-lg p-4">
-                      {n.pola.map((p) => (
-                        <div key={p.id}>
-                          <dt className="font-bold">{p.etykieta}</dt>
-                          <dd className="whitespace-pre-line text-[15px]">{w.pola?.[p.id] || '—'}</dd>
-                        </div>
-                      ))}
-                      {w.canva && (
-                        <details className="border-t border-line pt-3">
-                          <summary className="font-bold cursor-pointer min-h-11 flex items-center">Canva innowacji autora</summary>
-                          <div className="flex flex-col gap-2 mt-2">
-                            {SEKCJE.map((s) => (
-                              <div key={s.id}>
-                                <p className="font-bold text-[15px]">{s.nazwa}</p>
-                                {s.pytania.map((p) => (
-                                  <p key={p.id} className="text-[15px]"><span className="text-muted">{p.tytul}{/[?:]$/.test(p.tytul) ? "" : ":"}</span> {tekstOdpowiedzi(p, w.canva[p.id])}</p>
-                                ))}
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      )}
-                    </dl>
-                  )}
+                  {otwartyWniosek === w.id && <WniosekPdf w={w} n={n} />}
                 </li>
               ))}
             </ul>
@@ -434,15 +406,51 @@ function Nabory() {
           <div className="flex flex-wrap items-center gap-3 mt-1">
             {nowy.wzor && <WzorWniosku nabor={nowy} />}
             <WyborPdf etykieta={nowy.wzor ? 'Zmień plik' : 'Wybierz plik PDF'} onWybierz={(w) => ustaw('wzor', w)} />
-            {nowy.wzor && <button type="button" onClick={() => ustaw('wzor', null)} className="min-h-11 px-3 font-bold text-[#9B1C1C]">Usuń</button>}
+            {nowy.wzor && <button type="button" onClick={() => { ustaw('wzor', null); setPolaNowego(null) }} className="min-h-11 px-3 font-bold text-[#9B1C1C]">Usuń</button>}
           </div>
         </div>
-        <p className="text-sm text-muted">Pola wniosku: domyślny szablon ({DOMYSLNE_POLA.map((p) => p.etykieta).join(', ')}).</p>
+        <PolaZWzoru wzor={nowy.wzor} nabor={nowy} wartosc={polaNowego} onZmiana={setPolaNowego} />
         <button type="submit" disabled={!nowy.nazwa.trim() || !nowy.termin || !nowy.obszary.length} className="self-start min-h-11 px-5 rounded-lg bg-ink text-white font-bold disabled:opacity-50">
           Ogłoś nabór
         </button>
       </form>
     </div>
+  )
+}
+
+const zLimitem = (p) => ({ ...p, limit: Math.max(100, Math.min(10000, Number(p.limit) || 1500)) })
+// Do zapisu: limity w zakresie, bez pustych pytań (i bez odsyłaczy do nich)
+const doZapisu = ({ pola, pytania, uklad = null }) => {
+  const ok = pytania.filter((q) => q.tresc.trim())
+  const ids = new Set(ok.map((q) => q.id))
+  return { pola: pola.map((p) => ({ ...zLimitem(p), pytania: (p.pytania || []).filter((x) => ids.has(x)) })), pytania: ok, uklad }
+}
+
+// Pola wniosku i pytania istniejącego naboru – podgląd, a po podmianie wzoru odczyt i zatwierdzenie
+function PolaNaboru({ n, maWnioski }) {
+  const { ustawPolaNaboru } = useDane()
+  const zNaboru = () => (n.pola.some((p) => p.zrodlo) ? null : { pola: n.pola, pytania: n.pytania || [], uklad: n.uklad || null })
+  const [robocze, setRobocze] = useState(zNaboru)
+  const [zapisano, setZapisano] = useState(false)
+  const zmienione = JSON.stringify(robocze) !== JSON.stringify(zNaboru())
+  return (
+    <details className="rounded-xl" open={zmienione || undefined}>
+      <summary className="cursor-pointer font-bold min-h-11 flex items-center">
+        Pola wniosku ({n.pola.length}){n.pytania?.length ? ` i pytania do wnioskodawcy (${n.pytania.length})` : ''}
+        {zapisano && !zmienione && <span role="status" className="ml-3 text-teal-dark">✓ Zapisano</span>}
+      </summary>
+      <div className="flex flex-col gap-3 mt-2">
+        <PolaZWzoru wzor={n.wzor} nabor={n} wartosc={robocze} onZmiana={(v) => { setRobocze(v); setZapisano(false) }} />
+        {zmienione && (
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={() => { ustawPolaNaboru(n.id, robocze ? doZapisu(robocze) : { pola: DOMYSLNE_POLA, pytania: [], uklad: null }); setZapisano(true) }}
+              className="min-h-11 px-5 rounded-lg bg-ink text-white font-bold">Zapisz pola naboru</button>
+            <button type="button" onClick={() => setRobocze(zNaboru())} className="min-h-11 px-4 rounded-lg border-2 border-line font-bold">Anuluj zmiany</button>
+            {maWnioski && <span className="text-[15px] text-clay-dark font-bold">Do naboru są już wnioski – treść pól o tych samych nazwach zostanie, nowe pola będą puste.</span>}
+          </div>
+        )}
+      </div>
+    </details>
   )
 }
 
