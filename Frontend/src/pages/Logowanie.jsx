@@ -46,19 +46,21 @@ export default function Logowanie() {
             />
           </div>
         ) : (
-          <p className="p-4 rounded-xl bg-clay-light text-clay-dark">
-            Brak <code>VITE_GOOGLE_CLIENT_ID</code>. Dodaj go w pliku <code>.env.local</code> (instrukcja w README)
-            i uruchom ponownie <code>npm run dev</code>.
-          </p>
+          !zalogujDemo && (
+            <p className="p-4 rounded-xl bg-clay-light text-clay-dark">
+              Brak <code>VITE_GOOGLE_CLIENT_ID</code>. Dodaj go w pliku <code>.env.local</code> (instrukcja w README)
+              i uruchom ponownie <code>npm run dev</code>.
+            </p>
+          )
         )}
 
         {blad && <p role="alert" className="text-clay-dark font-bold">{blad}</p>}
 
-        {/* Widoczne tylko przy `npm run dev` – nie trafia na produkcję */}
+        {/* Tryb demo: lokalnie, bez backendu albo z VITE_DEMO=true (np. na Amplify) */}
         {zalogujDemo && (
           <div className="border-t border-line pt-5">
-            <p className="font-bold mb-1">Wejście testowe (tylko lokalnie)</p>
-            <p className="text-sm text-muted mb-3">Bez Google – do sprawdzania stron jako różne role.</p>
+            <p className="font-bold mb-1">Wersja demonstracyjna</p>
+            <p className="text-sm text-muted mb-3">Wejdź bez konta Google i zobacz platformę oczami każdej z ról. Dane zapisują się tylko w Twojej przeglądarce.</p>
             <div className="flex flex-col gap-2">
               {Object.entries(ROLE).map(([klucz, nazwa]) => (
                 <button
