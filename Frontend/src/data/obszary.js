@@ -3,6 +3,7 @@
 // UWAGA: dane w Mapie są OGÓLNOPOLSKIE – tak je podpisujemy w interfejsie.
 //
 // Docelowo te dane edytuje ROPS w panelu (szybka aktualizacja), a backend zwraca je z GET /api/obszary.
+// zrodla: [{tytul, url?}] – źródła danych; raporty: [{tytul, wydawca, url, okladka}] – „Dowiedz się więcej” (linki i okładki z PDF Mapy).
 // `slowa` – słowa kluczowe do rozpoznania obszaru w opisie problemu (MVP; docelowo klasyfikator / embeddingi).
 
 export const ZRODLO_MAPY = 'Mapa Wyzwań Społecznych, ROPS Kraków – dane ogólnopolskie'
@@ -15,14 +16,19 @@ export const OBSZARY = [
     slowa: ['rodzina', 'rodzic', 'dziecko', 'dzieci', 'piecza', 'zastępcza', 'adopcja', 'rodzeństwo', 'wychowanie', 'opiekuńczo'],
     definicja:
       'Rodzina pełni podstawowe role wychowawcze i opiekuńcze. Gdy przeżywa trudności, otrzymuje wsparcie, które ma przywrócić jej te zdolności. Piecza zastępcza zapewnia dziecku bezpieczeństwo, wsparcie emocjonalne i warunki do rozwoju, gdy rodzice biologiczni nie mogą się nim opiekować.',
+    liczby: [
+      { wartosc: '+3,5%', opis: 'więcej dzieci w pieczy zastępczej w 2023 r. niż rok wcześniej', zrodlo: 'GUS' },
+    ],
     dane: [
-      'W 2023 r. liczba dzieci w pieczy zastępczej wzrosła względem 2022 r. o 3,5%.',
       'Deinstytucjonalizację spowalnia zbyt mała liczba rodzin zastępczych w stosunku do potrzeb.',
       'Brakuje części form wsparcia rodzin zastępczych przewidzianych w ustawie, a współpraca powiatów i gmin jest niedostateczna.',
       'Do instytucjonalnej pieczy trafiają też dzieci poniżej 10. roku życia, a placówki bywają przepełnione.',
       'Duża część dzieci w pieczy to dzieci starsze, z licznych rodzeństw, z niepełnosprawnościami lub chorobami przewlekłymi.',
     ],
-    zrodla: ['Piecza zastępcza w 2023 roku – GUS', 'Wsparcie systemu pieczy zastępczej w procesie deinstytucjonalizacji – NIK, 2022'],
+    zrodla: [
+      {tytul: "Piecza zastępcza w 2023 roku – GUS", url: "https://stat.gov.pl/download/gfx/portalinformacyjny/pl/defaultaktualnosci/6000/1/8/1/piecza_zastepcza_w_2023_r..pdf"},
+      {tytul: "Wsparcie systemu pieczy zastępczej w procesie deinstytucjonalizacji – NIK, 2022", url: "https://www.nik.gov.pl/aktualnosci/deinstytucjonalizacji-pieczy-zastepczej.html"},
+    ],
     wyzwania: [
       'Więcej pozytywnie zweryfikowanych kandydatów na rodziny zastępcze.',
       'Priorytet dla rodzinnej pieczy zastępczej.',
@@ -38,7 +44,10 @@ export const OBSZARY = [
       wyzwania: ['Niepełnosprawność obojga dzieci', 'Trudne doświadczenia z rodziny', 'Brak stabilnego miejsca pobytu'],
       motywacje: ['Mieć „prawdziwą” rodzinę', 'Wychowywać się razem, w jednym miejscu', 'Być akceptowanymi przez rówieśników'],
     },
-    raporty: [],
+    raporty: [
+      {tytul: "Piecza zastępcza w 2023 r.", wydawca: "Główny Urząd Statystyczny", url: "https://stat.gov.pl/download/gfx/portalinformacyjny/pl/defaultaktualnosci/6000/1/8/1/piecza_zastepcza_w_2023_r..pdf", okladka: "/raporty/rodzina-1.jpg"},
+      {tytul: "Wsparcie systemu pieczy zastępczej w procesie deinstytucjonalizacji", wydawca: "Najwyższa Izba Kontroli, 2022", url: "https://www.nik.gov.pl/kontrole/P/22/031/", okladka: "/raporty/rodzina-2.jpg"},
+    ],
   },
   {
     id: 'bezdomnosc',
@@ -65,10 +74,10 @@ export const OBSZARY = [
       motywacje: ['„Żeby nikt nie zobaczył, że nie mam domu”', '„Chcę zrobić coś ze swoim życiem”'],
     },
     raporty: [
-      'Bezdomność młodzieży i młodych dorosłych w Polsce – Fundacja „Po Drugie”, 2023',
-      'Działania aktywizujące i wspierające osoby bezdomne – NIK, 2020',
-      'Raport na temat osób bezdomnych – M. Baranowski, 2010',
-      'Diagnoza sytuacji osób doświadczających bezdomności w Warszawie, 2022',
+      {tytul: "Bezdomność młodzieży i młodych dorosłych w Polsce", wydawca: "Fundacja „Po Drugie”, 2023", url: "https://podrugie.pl/dodaj-mnie-raport-z-projektu/", okladka: "/raporty/bezdomnosc-1.jpg"},
+      {tytul: "Działania aktywizujące i wspierające osoby bezdomne", wydawca: "Najwyższa Izba Kontroli, 2020", url: "https://www.nik.gov.pl/kontrole/P/18/096/", okladka: "/raporty/bezdomnosc-2.jpg"},
+      {tytul: "Raport na temat osób bezdomnych", wydawca: "Mariusz Baranowski, 2010", url: "https://open.icm.edu.pl/items/edfec420-329f-4b2c-874c-2a6c28f99f3a", okladka: "/raporty/bezdomnosc-3.jpg"},
+      {tytul: "Diagnoza sytuacji osób doświadczających bezdomności w Warszawie", wydawca: "Urząd m.st. Warszawy, 2022", url: "https://wsparcie.um.warszawa.pl/problematyka-bezdomnosci-w-warszawie", okladka: "/raporty/bezdomnosc-4.jpg"},
     ],
   },
   {
@@ -78,13 +87,26 @@ export const OBSZARY = [
     slowa: ['niepełnospraw', 'wózek', 'niewidom', 'niesłysz', 'niedosłysz', 'rehabilitac', 'dostępnoś', 'bariery', 'asystent'],
     definicja:
       'Niepełnosprawność to trwałe naruszenie sprawności organizmu, które istotnie obniża zdolność do pracy i samodzielnego życia. Może być wrodzona albo powstać w wyniku wypadku lub choroby – dotyczy dużej części społeczeństwa na różnych etapach życia.',
+    liczby: [
+      { wartosc: '5,4 mln', opis: 'osób z niepełnosprawnościami w Polsce (NSP 2021)', zrodlo: 'GUS' },
+      { wartosc: '14,3%', opis: 'ludności to osoby z niepełnosprawnościami', zmiana: '12,2% w 2011 r.', zrodlo: 'GUS, NSP 2021' },
+      { wartosc: '30,1%', opis: 'wskaźnik zatrudnienia osób z niepełnosprawnością w wieku 16–64 lat (koniec 2023 r.)', zrodlo: 'GUS, BDL' },
+    ],
+    wykres: {
+      tytul: 'Odsetek ludności z niepełnosprawnościami',
+      jednostka: '%',
+      slupki: [{ etykieta: 'NSP 2011', wartosc: 12.2 }, { etykieta: 'NSP 2021', wartosc: 14.3 }],
+      zrodlo: 'GUS, Narodowe Spisy Powszechne',
+    },
     dane: [
-      'Wskaźnik zatrudnienia osób z niepełnosprawnością w wieku 16–64 lat wyniósł pod koniec 2023 r. 30,1%.',
-      'Według NSP 2021 osób z niepełnosprawnościami było 5,4 mln – 14,3% ludności (12,2% w 2011 r.).',
       'Najważniejsze potrzeby: mieszkalnictwo, czas wolny, rehabilitacja, praca i informacja; najsłabiej zaspokojony jest dostęp do informacji (PFRON, 2024).',
       'Kluczowy moment wymagający nowych rozwiązań: przejście z edukacji w dorosłość i na rynek pracy.',
     ],
-    zrodla: ['Bank Danych Lokalnych GUS', 'Badanie potrzeb osób niepełnosprawnych w Polsce 2024 – PFRON', 'Wyzwania polityki publicznej – PIE'],
+    zrodla: [
+      {tytul: "Bank Danych Lokalnych – GUS"},
+      {tytul: "Badanie potrzeb osób niepełnosprawnych w Polsce 2024 – PFRON", url: "https://www.pfron.org.pl/fileadmin/Badania_i_analizy/2024/2024-08-07_Raport_koncowy/Raport_koncowy_Badanie_potrzeb_ON_w_Polsce_2024.pdf"},
+      {tytul: "Wyzwania polityki publicznej – PIE", url: "https://pie.net.pl/wp-content/uploads/2019/12/Raport_PIE-Wyzwania-polityki-publicznej.pdf"},
+    ],
     wyzwania: [
       'Większy dostęp do rynku pracy.',
       'Wykształcenie pozwalające na samodzielność i rozwój zawodowy.',
@@ -104,11 +126,11 @@ export const OBSZARY = [
       motywacje: ['„Mieć w życiu coś więcej niż tylko pracę”', 'Wyjść z domu, kiedy chce', 'Decydować o sobie'],
     },
     raporty: [
-      'Strategia na rzecz Osób z Niepełnosprawnościami 2021–2030',
-      'E-podręcznik dostępny dla wszystkich – Fundacja Instytut Rozwoju Regionalnego, 2013',
-      'Konwencja o prawach osób niepełnosprawnych – poradnik RPO, 2013',
-      'Sami-Dzielni! Standardy mieszkalnictwa wspomaganego, 2023',
-      'Projektowanie bez barier – Stowarzyszenie Przyjaciół Integracji',
+      {tytul: "Strategia na rzecz Osób z Niepełnosprawnościami 2021–2030", wydawca: "Monitor Polski 2021, poz. 218", url: "https://niepelnosprawni.gov.pl/p,170,strategia-na-rzecz-osob-z-niepelnosprawnosciami-2021-2030", okladka: "/raporty/niepelnosprawnosc-1.jpg"},
+      {tytul: "Konwencja o prawach osób niepełnosprawnych. Poradnik", wydawca: "Rzecznik Praw Obywatelskich, 2013", url: "https://bip.brpo.gov.pl/sites/default/files/BIULETYN%20RPO%20%E2%80%93%20Materia%C5%82y%20nr%2082%20KPON.pdf", okladka: "/raporty/niepelnosprawnosc-2.jpg"},
+      {tytul: "E-podręcznik dostępny dla wszystkich", wydawca: "Fundacja Instytut Rozwoju Regionalnego, 2013", url: "https://www.power.gov.pl/media/13591/e_podrecznik_dostepny_dla_wszystkich.pdf", okladka: "/raporty/niepelnosprawnosc-3.jpg"},
+      {tytul: "Sami-Dzielni! Nowe standardy mieszkalnictwa wspomaganego", wydawca: "ROPS w Krakowie, 2023", url: "https://rops.krakow.pl/dzial-publikacje/sami-dzielni-nowe-standardy-mieszkalnictwa-wspomaganego-dla-osob-z-niepelnosprawnosciami-sprzezonymi-2023-1", okladka: "/raporty/niepelnosprawnosc-4.jpg"},
+      {tytul: "Projektowanie bez barier – wytyczne", wydawca: "Stowarzyszenie Przyjaciół Integracji", url: "https://www.power.gov.pl/media/13910/projektowanie_zus.pdf", okladka: "/raporty/niepelnosprawnosc-5.jpg"},
     ],
   },
   {
@@ -118,14 +140,30 @@ export const OBSZARY = [
     slowa: ['ubóstw', 'bieda', 'biedn', 'pieniądz', 'głód', 'jedzenie', 'opał', 'ogrzew', 'zadłuż', 'zasiłek', 'bezroboc', 'praca'],
     definicja:
       'Ubóstwo ekonomiczne dotyka różne grupy w różnym stopniu. Szczególnie narażeni są beneficjenci świadczeń społecznych, rolnicy i mieszkańcy wsi poza aglomeracjami. Bieda często dotyczy też osób pracujących na nisko opłacanych stanowiskach.',
-    dane: [
-      'W 2023 r. ubóstwo skrajne dotyczyło 6,6% gospodarstw domowych – wzrost o 2 pp. rok do roku.',
-      'Ubóstwo skrajne w 2023 r.: rolnicy 14,1%, renciści 8,4%, pracownicy 6,4%, emeryci 5,9%.',
-      'Wśród osób z wykształceniem co najwyżej gimnazjalnym w ubóstwie skrajnym żyła średnio co ósma (12,8%).',
-      'Blisko 78% osób korzystających z pomocy żywnościowej uważa, że ich sytuacja pogorszyła się w ostatnim roku.',
-      'Lęk przed biedą deklaruje 30% osób – najwięcej od 2015 r.',
+    liczby: [
+      { wartosc: '6,6%', opis: 'gospodarstw domowych w ubóstwie skrajnym (2023 r.)', zmiana: '+2 pp. rok do roku', zrodlo: 'GUS' },
+      { wartosc: '12,8%', opis: 'osób z wykształceniem co najwyżej gimnazjalnym żyje w ubóstwie skrajnym – co ósma' },
+      { wartosc: '78%', opis: 'korzystających z pomocy żywnościowej mówi, że ich sytuacja pogorszyła się w ostatnim roku' },
+      { wartosc: '30%', opis: 'osób deklaruje lęk przed biedą – najwięcej od 2015 r.' },
     ],
-    zrodla: ['Zasięg ubóstwa ekonomicznego w Polsce w 2023 r. – GUS', 'Raport o biedzie 2023 – Szlachetna Paczka', 'Poverty Watch 2023 – EAPN Polska'],
+    wykres: {
+      tytul: 'Ubóstwo skrajne w 2023 r. według grupy',
+      jednostka: '%',
+      slupki: [
+        { etykieta: 'Rolnicy', wartosc: 14.1 },
+        { etykieta: 'Renciści', wartosc: 8.4 },
+        { etykieta: 'Pracownicy', wartosc: 6.4 },
+        { etykieta: 'Emeryci', wartosc: 5.9 },
+      ],
+      odniesienie: { etykieta: 'ogółem gospodarstwa domowe', wartosc: 6.6 },
+      zrodlo: 'GUS, Zasięg ubóstwa ekonomicznego w Polsce w 2023 r.',
+    },
+    dane: [],
+    zrodla: [
+      {tytul: "Zasięg ubóstwa ekonomicznego w Polsce w 2023 r. – GUS", url: "https://stat.gov.pl/obszary-tematyczne/warunki-zycia/ubostwo-pomoc-spoleczna/zasieg-ubostwa-ekonomicznego-w-polsce-w-2023-roku,14,11.html"},
+      {tytul: "Raport o biedzie 2023 – Szlachetna Paczka", url: "https://www.szlachetnapaczka.pl/aktualnosci/na-co-nie-stac-polakow-raport-o-biedzie-2023-szlachetnej-paczki/"},
+      {tytul: "Poverty Watch 2023 – EAPN Polska", url: "https://www.eapn.org.pl/eapn/uploads/2023/10/poverty_watch_23_v12_10_v2_ost.pdf"},
+    ],
     wyzwania: [
       'Ubóstwo dzieci – dobrej jakości wczesna opieka i edukacja.',
       'Ubóstwo seniorów i osób z niepełnosprawnościami.',
@@ -143,10 +181,10 @@ export const OBSZARY = [
       motywacje: ['„Żeby się spotkać, napić razem herbaty”', '„Mieć pewność, że będę mieć co jeść i ogrzeję dom”'],
     },
     raporty: [
-      'Raport o biedzie 2023 – Szlachetna Paczka',
-      'Poverty Watch 2023 – EAPN Polska',
-      'Zasięg ubóstwa ekonomicznego w Polsce w 2023 r. – GUS',
-      'Poverty Watch 2022 – EAPN Polska',
+      {tytul: "Raport o biedzie 2023", wydawca: "Szlachetna Paczka", url: "https://www.szlachetnapaczka.pl/raport-o-biedzie/", okladka: "/raporty/ubostwo-1.jpg"},
+      {tytul: "Poverty Watch 2023. Monitoring ubóstwa i polityki społecznej", wydawca: "EAPN Polska", url: "https://www.eapn.org.pl/eapn/uploads/2023/10/poverty_watch_23_v12_10_v2_ost.pdf", okladka: "/raporty/ubostwo-2.jpg"},
+      {tytul: "Zasięg ubóstwa ekonomicznego w Polsce w 2023 r.", wydawca: "Główny Urząd Statystyczny", url: "https://stat.gov.pl/obszary-tematyczne/warunki-zycia/ubostwo-pomoc-spoleczna/zasieg-ubostwa-ekonomicznego-w-polsce-w-2023-roku,14,11.html", okladka: "/raporty/ubostwo-3.jpg"},
+      {tytul: "Poverty Watch 2022. Monitoring ubóstwa finansowego", wydawca: "EAPN Polska", url: "https://www.eapn.org.pl/eapn/uploads/2022/10/monitoring_ubostwa_2022_ost.pdf", okladka: "/raporty/ubostwo-4.jpg"},
     ],
   },
   {
@@ -162,7 +200,9 @@ export const OBSZARY = [
       'Działania potrzebują stabilnego finansowania, wychodzącego poza krótkie projekty bez gwarancji kontynuacji.',
       'Równy dostęp wymaga też programów celowanych, np. kursów języka polskiego dla dzieci i dorosłych.',
     ],
-    zrodla: ['Model lokalnej polityki włączania migrantów i migrantek w życie miast – OBM UW, 2023'],
+    zrodla: [
+      {tytul: "Model lokalnej polityki włączania migrantów i migrantek w życie miast – OBM UW, 2023", url: "https://www.migracje.uw.edu.pl/wp-content/uploads/2023/08/Model_polityki_wlaczania_migrantow.pdf"},
+    ],
     wyzwania: [
       'Równy dostęp migrantów do usług społecznych.',
       'Usługi dostosowane do potrzeb – tłumacz, asysta kulturowa, indywidualne programy integracji.',
@@ -180,10 +220,10 @@ export const OBSZARY = [
       motywacje: ['Odnaleźć się w Polsce i zintegrować', 'Duża motywacja wewnętrzna, chęć zmiany'],
     },
     raporty: [
-      'Model lokalnej polityki włączania migrantów i migrantek – OBM UW, 2023',
-      'Biała Księga. Wyzwania systemowego wsparcia uchodźców, 2022',
-      'Polacy i Ukraińcy – wyzwania integracji uchodźców – PIE, 2023',
-      'Uchodźcy z Ukrainy w Polsce. Wyzwania i potencjał integracji – Deloitte, 2022',
+      {tytul: "Model lokalnej polityki włączania migrantów i migrantek w życie miast", wydawca: "OBM UW, 2023", url: "https://nomada.info.pl/wp-content/uploads/2023/08/Model_polityki_wlaczania_migrantow_i_migrantek_FIN.pdf", okladka: "/raporty/cudzoziemcy-1.jpg"},
+      {tytul: "Biała Księga. Wyzwania systemowego wsparcia uchodźców", wydawca: "Fundacja im. Stefana Batorego, 2022", url: "https://www.batory.org.pl/wp-content/uploads/2022/06/Okragly_stol_Biala-ksiega_www_S.pdf", okladka: "/raporty/cudzoziemcy-2.jpg"},
+      {tytul: "Polacy i Ukraińcy – wyzwania integracji uchodźców", wydawca: "Polski Instytut Ekonomiczny, 2023", url: "https://pie.net.pl/wp-content/uploads/2023/05/Wyzwania-integracji-.pdf", okladka: "/raporty/cudzoziemcy-3.jpg"},
+      {tytul: "Uchodźcy z Ukrainy w Polsce. Wyzwania i potencjał integracji", wydawca: "Deloitte, 2022", url: "https://www2.deloitte.com/content/dam/Deloitte/pl/Documents/Reports/pl-Uchodzcy-z-Ukrainy-w-Polsce-Report.pdf", okladka: "/raporty/cudzoziemcy-4.jpg"},
     ],
   },
   {
@@ -200,7 +240,11 @@ export const OBSZARY = [
       'Pandemia nasiliła samotność osób starszych mieszkających w pojedynkę – izolacja szkodzi pamięci, uwadze i zdrowiu psychicznemu.',
       'Główne przyczyny zwiększonej umieralności to palenie tytoniu i nieodpowiednia dieta.',
     ],
-    zrodla: ['Raport o samotności 2021 – Szlachetna Paczka', 'Polska: Profil systemu ochrony zdrowia 2023 – OECD', 'Dziennik Urzędowy Ministra Zdrowia, 2021'],
+    zrodla: [
+      {tytul: "Raport o samotności 2021 – Szlachetna Paczka", url: "https://www.szlachetnapaczka.pl/wp-content/uploads/2021/03/raport_o_samotnosci_2021.pdf"},
+      {tytul: "Polska: Profil systemu ochrony zdrowia 2023 – OECD", url: "https://www.oecd.org/pl/publications/2023/12/poland-country-health-profile-2023_80434439.html"},
+      {tytul: "Dziennik Urzędowy Ministra Zdrowia, 2021, poz. 69", url: "https://dziennikmz.mz.gov.pl/DUM_MZ/2021/69/akt.pdf"},
+    ],
     wyzwania: [
       'Edukacja o zdrowym stylu życia, profilaktyce, diecie i aktywności.',
       'Równy dostęp do dobrej opieki zdrowotnej.',
@@ -216,9 +260,9 @@ export const OBSZARY = [
       motywacje: ['Bezpieczeństwo matki', 'Chwila dla siebie, spotkanie z kimś'],
     },
     raporty: [
-      'Raport o samotności 2021 – Szlachetna Paczka',
-      'Mapy potrzeb zdrowotnych – BASiW, 2021',
-      'State of Health in the EU – Polska, 2023',
+      {tytul: "Raport o samotności 2021. Pierwszy rok pandemii", wydawca: "Szlachetna Paczka", url: "https://www.szlachetnapaczka.pl/raport-o-samotnosci/", okladka: "/raporty/zdrowie-1.jpg"},
+      {tytul: "Mapy potrzeb zdrowotnych", wydawca: "Ministerstwo Zdrowia, 2021", url: "https://dziennikmz.mz.gov.pl/legalact/2021/69/", okladka: "/raporty/zdrowie-2.jpg"},
+      {tytul: "Polska: Profil systemu ochrony zdrowia 2023", wydawca: "OECD, State of Health in the EU", url: "https://www.oecd.org/pl/publications/polska-profil-systemu-ochrony-zdrowia-2023_b12d3d03-pl.html", okladka: "/raporty/zdrowie-3.jpg"},
     ],
   },
   {
@@ -232,10 +276,18 @@ export const OBSZARY = [
       'Młodzi coraz częściej zmagają się z brakiem motywacji i samoakceptacji.',
       'Rośnie liczba prób samobójczych wśród dzieci i młodzieży.',
       'Nadmierne korzystanie z urządzeń i internetu wiąże się ze stanami depresyjnymi i problemami z postrzeganiem ciała.',
-      'Finansowanie opieki psychiatrycznej jest bardzo niskie – ok. 3% wydatków NFZ.',
       'Problemy mogą być częstsze niż zgłaszane – przez stygmatyzację i słaby dostęp do usług.',
     ],
-    zrodla: ['Młode głowy. Otwarcie o zdrowiu psychicznym – Fundacja UNAWEZA, 2023', 'Polska: Profil systemu ochrony zdrowia 2023 – OECD', 'Diagnoza stanu polskiego społeczeństwa, Kraków 2022'],
+    liczby: [
+      { wartosc: '~3%', opis: 'wydatków NFZ przeznacza się na opiekę psychiatryczną' },
+    ],
+    zrodla: [
+      {tytul: "Młode głowy. Otwarcie o zdrowiu psychicznym – Fundacja UNAWEZA, 2023", url: "https://mlodeglowy.pl/wp-content/uploads/2023/04/MLODE-GLOWY.-Otwarcie-o-zdrowiu-psychicznym_-Raport-final.pdf"},
+      {tytul: "Raport z badania kondycji psychicznej młodzieży („Żyj z sensem”), 2022", url: "https://rep.up.krakow.pl/xmlui/bitstream/handle/11716/13321/Solecki%20-%20Raport%20z%20badania%20kondycji%20psychicznej%20m%c5%82odzierzy.pdf?sequence=1&isAllowed=y"},
+      {tytul: "Polska: Profil systemu ochrony zdrowia 2023 – OECD", url: "https://www.oecd.org/pl/publications/2023/12/poland-country-health-profile-2023_80434439.html"},
+      {tytul: "People at Work 2022 – ADP Research Institute", url: "https://pl.adp.com/baza-wiedzy-hr/insights/people-at-work-2022-a-global-workforce-view.aspx"},
+      {tytul: "Diagnoza stanu polskiego społeczeństwa, Kraków 2022", url: "http://fundacjaprofuturo.pl/wp-content/uploads/2023/04/Pomi%C4%99dzy-pandemi%C4%85-COVID-19-a-wojn%C4%85-w-Ukrainie-Diagonoza.2022-ebook.pdf"},
+    ],
     wyzwania: [
       'Edukacja o zdrowiu psychicznym – szczególnie dzieci, młodzieży i seniorów.',
       'Wzmacnianie kompetencji rodziców w rozpoznawaniu sygnałów kryzysu.',
@@ -250,10 +302,11 @@ export const OBSZARY = [
       motywacje: ['Czuć się ważnym i akceptowanym', 'Poczucie bezpieczeństwa w kryzysie'],
     },
     raporty: [
-      'Pomiędzy pandemią COVID-19 a wojną w Ukrainie. Diagnoza stanu polskiego społeczeństwa, 2022',
-      'Polska: Profil systemu ochrony zdrowia 2023',
-      'People at Work 2022: A Global Workforce View – ADP',
-      'Młode głowy. Otwarcie o zdrowiu psychicznym – UNAWEZA, 2023',
+      {tytul: "Pomiędzy pandemią COVID-19 a wojną w Ukrainie. Diagnoza stanu polskiego społeczeństwa", wydawca: "Kraków 2022", url: "http://fundacjaprofuturo.pl/wp-content/uploads/2023/04/Pomi%C4%99dzy-pandemi%C4%85-COVID-19-a-wojn%C4%85-w-Ukrainie-Diagonoza.2022-ebook.pdf", okladka: "/raporty/psychika-1.jpg"},
+      {tytul: "Raport z badania kondycji psychicznej młodzieży", wydawca: "dr Roman Solecki, 2022", url: "https://rep.up.krakow.pl/xmlui/bitstream/handle/11716/13321/Solecki%20-%20Raport%20z%20badania%20kondycji%20psychicznej%20m%c5%82odzierzy.pdf?sequence=1&isAllowed=y", okladka: "/raporty/psychika-2.jpg"},
+      {tytul: "Młode głowy. Otwarcie o zdrowiu psychicznym", wydawca: "Fundacja UNAWEZA, 2023", url: "https://mlodeglowy.pl/wp-content/uploads/2023/04/MLODE-GLOWY.-Otwarcie-o-zdrowiu-psychicznym_-Raport-final.pdf", okladka: "/raporty/psychika-3.jpg"},
+      {tytul: "Polska: Profil systemu ochrony zdrowia 2023", wydawca: "OECD, State of Health in the EU", url: "https://www.oecd.org/pl/publications/2023/12/poland-country-health-profile-2023_80434439.html", okladka: "/raporty/psychika-4.jpg"},
+      {tytul: "People at Work 2022: A Global Workforce View", wydawca: "ADP Research Institute", url: "https://pl.adp.com/baza-wiedzy-hr/insights/people-at-work-2022-a-global-workforce-view.aspx", okladka: "/raporty/psychika-5.jpg"},
     ],
   },
   {
@@ -269,7 +322,12 @@ export const OBSZARY = [
       'Groźna jest wielolekowość – przyjmowanie wielu leków i suplementów naraz.',
       'Poczucie samotności łączy się z sytuacją materialną – im gorsza, tym większa samotność.',
     ],
-    zrodla: ['Sytuacja osób starszych w Polsce w 2022 r. – GUS', 'Wielolekowość seniorów w Polsce – FCIS, 2021', 'Ocena potrzeb w zakresie wsparcia dla Seniorów – SeniorApp, 2023'],
+    zrodla: [
+      {tytul: "Sytuacja osób starszych w Polsce w 2022 r. – GUS", url: "https://stat.gov.pl/obszary-tematyczne/osoby-starsze/osoby-starsze/sytuacja-osob-starszych-w-polsce-w-2022-roku,2,5.html"},
+      {tytul: "Wielolekowość seniorów w Polsce – FCIS, 2021", url: "https://fundacjafcis.pl/wielolekowosc-seniorow-w-polsce-aspekty-prawno-spoleczne-i-medyczne-raport/"},
+      {tytul: "Ocena potrzeb w zakresie wsparcia dla Seniorów – SeniorApp, 2023", url: "https://seniorapp.pl/wp-content/uploads/2023/10/Raport_SeniorApp_2023_19.10.23_small.pdf"},
+      {tytul: "Program „Opieka 75+” na rok 2024 – MRiPS", url: "https://www.gov.pl/web/rodzina/program-opieka-75-edycja-2024"},
+    ],
     wyzwania: [
       'Dostosowanie usług zdrowotnych i instytucji do starzejącego się społeczeństwa, także z użyciem technologii.',
       'Projektowanie uniwersalne przestrzeni i mieszkań, rozwój mieszkalnictwa senioralnego.',
@@ -286,9 +344,9 @@ export const OBSZARY = [
       motywacje: ['Sens i przyjemność w prostych rzeczach', 'Lepsze samopoczucie, wyjście do ludzi'],
     },
     raporty: [
-      'Sytuacja osób starszych w Polsce w 2022 r. – GUS',
-      'Wielolekowość seniorów w Polsce – FCIS, 2021',
-      'Ocena potrzeb w zakresie wsparcia dla Seniorów w Polsce – SeniorApp, 2023',
+      {tytul: "Sytuacja osób starszych w Polsce w 2022 r.", wydawca: "Główny Urząd Statystyczny", url: "https://stat.gov.pl/obszary-tematyczne/osoby-starsze/osoby-starsze/sytuacja-osob-starszych-w-polsce-w-2022-roku,2,5.html", okladka: "/raporty/seniorzy-2.jpg"},
+      {tytul: "Wielolekowość seniorów w Polsce. Aspekty prawno-społeczne i medyczne", wydawca: "FCIS, 2021", url: "https://fundacjafcis.pl/wielolekowosc-seniorow-w-polsce-aspekty-prawno-spoleczne-i-medyczne-raport/", okladka: "/raporty/seniorzy-1.jpg"},
+      {tytul: "Ocena potrzeb w zakresie wsparcia dla Seniorów w Polsce", wydawca: "SeniorApp, 2023", url: "https://seniorapp.pl/wp-content/uploads/2023/10/Raport_SeniorApp_2023_19.10.23_small.pdf", okladka: "/raporty/seniorzy-3.jpg"},
     ],
   },
 ]

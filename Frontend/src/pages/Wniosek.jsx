@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDane } from '../data/DaneContext.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { wypelnijZFiszki, naborOtwarty } from '../data/nabory.js'
+import { prowadzi } from '../data/watekFiszki.js'
 import { canvaZFiszki, brakujaceSekcje } from '../data/canva.js'
 import CanvaFormularz from '../components/CanvaFormularz.jsx'
 import WzorWniosku from '../components/WzorWniosku.jsx'
@@ -27,7 +28,8 @@ export default function Wniosek() {
   const [komunikat, setKomunikat] = useState('')
 
   if (!fiszka || !nabor) return <Brak tekst="Nie znaleziono fiszki lub naboru." />
-  if (fiszka.autorId !== uzytkownik.id && uzytkownik.rola !== 'rops_admin') return <Brak tekst="To nie jest Twoja fiszka." />
+  // Wniosek przygotowuje prowadzący: autor albo gmina, która przejęła pomysł
+  if (!prowadzi(fiszka, uzytkownik) && uzytkownik.rola !== 'rops_admin') return <Brak tekst="Wniosek może przygotować tylko osoba prowadząca pomysł." />
 
   const tylkoOdczyt = zapisany && zapisany.status !== 'szkic'
   const brakCanvy = brakujaceSekcje(canva)
@@ -50,7 +52,7 @@ export default function Wniosek() {
   const moznaZlozyc = blokujace.length === 0 && brakCanvy.length === 0 && naborOtwarty(nabor)
 
   // Docelowo: PUT /api/wnioski/:id (szkic) i POST /api/wnioski/:id/zloz
-  const dane = () => ({ id, fiszkaId: fiszka.id, naborId: nabor.id, autorId: fiszka.autorId, autor: fiszka.autor, tytul: fiszka.tytul, pola, canva })
+  const dane = () => ({ id, fiszkaId: fiszka.id, naborId: nabor.id, autorId: zapisany?.autorId || (uzytkownik.rola === 'rops_admin' ? fiszka.autorId : uzytkownik.id), autor: zapisany?.autor || (uzytkownik.rola === 'rops_admin' ? fiszka.autor : uzytkownik.imie), tytul: fiszka.tytul, pola, canva })
   const zapisz = () => {
     zapiszWniosek(dane())
     setKomunikat('Szkic zapisany.')

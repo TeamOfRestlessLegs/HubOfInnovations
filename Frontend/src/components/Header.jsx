@@ -1,22 +1,30 @@
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { useAuth, ROLE } from '../auth/AuthContext.jsx'
+import Powiadomienia from './Powiadomienia.jsx'
+import Dostepnosc from './Dostepnosc.jsx'
 
+// Menu: tylko główne miejsca. Kreator to przycisk „Zgłoś pomysł”, panel i wiadomości są po prawej.
 const linki = [
   { to: '/szukaj', label: 'Znajdź rozwiązanie' },
-  { to: '/zasobnik', label: 'Zasobnik wiedzy' },
-  { to: '/innowacje', label: 'Pomysły mieszkańców' },
-  { to: '/kreator', label: 'Kreator pomysłów' },
+  { to: '/innowacje', label: 'Pomysły' },
 ]
 
 // Nazwa panelu zależy od roli
-const NAZWA_PANELU = { resident: 'Moje sprawy', rops_admin: 'Panel ROPS' }
+const NAZWA_PANELU = { resident: 'Moje sprawy', jst: 'Panel gminy', ekspert: 'Panel eksperta', rops_admin: 'Panel ROPS' }
 
 export default function Header() {
   const { uzytkownik } = useAuth()
   return (
     <header className="bg-white border-b border-line">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+      {/* Link „przejdź do treści” – pierwszy element dla klawiatury i czytników ekranu */}
+      <a href="#tresc" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-lg focus:bg-ink focus:text-white focus:font-bold">Przejdź do treści</a>
+      <div className="border-b border-line bg-ground">
+        <div className="max-w-7xl mx-auto px-6 py-1.5 flex justify-end">
+          <Dostepnosc />
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-x-4 gap-y-3">
         <Link to="/" className="flex items-center gap-2.5 text-ink no-underline">
           <Logo />
           <span className="font-display font-extrabold text-lg leading-none">
@@ -24,14 +32,14 @@ export default function Header() {
           </span>
         </Link>
 
-        <nav aria-label="Główna nawigacja" className="flex flex-wrap gap-1 flex-1">
+        <nav aria-label="Główna nawigacja" className="flex flex-wrap gap-0.5 flex-1">
           {linki.map((l) => (
             // NavLink sam wie, czy jest aktywny – dostajesz isActive
             <NavLink
               key={l.to}
               to={l.to}
               className={({ isActive }) =>
-                'px-3 py-3 rounded-lg font-bold no-underline whitespace-nowrap ' +
+                'px-2.5 py-3 rounded-lg font-bold no-underline whitespace-nowrap ' +
                 (isActive ? 'bg-teal-light text-teal-dark' : 'text-ink hover:bg-ground')
               }
             >
@@ -41,17 +49,24 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {uzytkownik?.rola !== 'rops_admin' && uzytkownik?.rola !== 'ekspert' && (
+            <Link to="/kreator" className="min-h-11 px-4 inline-flex items-center rounded-lg bg-clay text-white font-bold no-underline whitespace-nowrap hover:bg-clay-dark">
+              + Zgłoś pomysł
+            </Link>
+          )}
           {uzytkownik && (
             <NavLink
               to="/panel"
               className={({ isActive }) =>
-                'min-h-11 px-4 inline-flex items-center rounded-lg font-bold no-underline border-2 border-clay ' +
-                (isActive ? 'bg-clay text-white' : 'text-clay-dark hover:bg-clay-light')
+                'min-h-11 px-4 inline-flex items-center rounded-lg font-bold no-underline border-2 border-ink whitespace-nowrap ' +
+                (isActive ? 'bg-ink text-white' : 'text-ink hover:bg-ground')
               }
             >
-              {NAZWA_PANELU[uzytkownik.rola]}
+              <span className="hidden xl:inline">{NAZWA_PANELU[uzytkownik.rola]}</span>
+              <span className="xl:hidden" aria-label={NAZWA_PANELU[uzytkownik.rola]}>Panel</span>
             </NavLink>
           )}
+          {uzytkownik && <Powiadomienia />}
           <Konto />
         </div>
       </div>

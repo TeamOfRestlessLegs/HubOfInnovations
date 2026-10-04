@@ -21,3 +21,28 @@
 body {
   @apply bg-ground text-ink font-sans text-[17px] leading-relaxed;
 }
+
+/* Widoczny fokus dla klawiatury (WCAG 2.4.7) */
+:focus-visible {
+  outline: 3px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+/* Wysoki kontrast – włączany przyciskiem w pasku dostępności */
+.kontrast {
+  --color-ink: #000000;
+  --color-ground: #FFFFFF;
+  --color-line: #000000;
+  --color-muted: #1A1A1A;
+  --color-teal: #004D3B;
+  --color-teal-dark: #00261D;
+  --color-teal-light: #FFFFFF;
+  --color-clay: #7A2500;
+  --color-clay-dark: #4D1700;
+  --color-clay-light: #FFFFFF;
+}
+.kontrast a { text-decoration: underline; }
+.kontrast :focus-visible { outline: 4px solid #000; box-shadow: 0 0 0 7px #FFD400; }
+.kontrast [class*="bg-[#"] { background-color: #FFFFFF !important; }
+.kontrast [class*="border"] { border-color: #000000; }
+.kontrast .pasek-pusty { background: #FFFFFF; box-shadow: inset 0 0 0 2px #000000; }

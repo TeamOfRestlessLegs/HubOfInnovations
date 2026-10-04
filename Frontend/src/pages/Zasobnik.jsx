@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useDane, opublikowane } from '../data/DaneContext.jsx'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useDane } from '../data/DaneContext.jsx'
 import { OBSZARY, ZRODLO_MAPY } from '../data/obszary.js'
 import { materialy } from '../data/zasobnik.js'
 import KartaBiblioteki from '../components/KartaBiblioteki.jsx'
@@ -14,7 +14,8 @@ const ZAKLADKI = [
 // Zasobnik wiedzy: przeglądanie wiedzy ROPS po obszarach (bez wpisywania czegokolwiek).
 // Różnica z wyszukiwarką: tu użytkownik PRZEGLĄDA katalog, tam OPISUJE problem i dostaje dopasowane wyniki.
 export default function Zasobnik() {
-  const [zakladka, setZakladka] = useState('wyzwania')
+  const [params] = useSearchParams()
+  const [zakladka, setZakladka] = useState(ZAKLADKI.some((z) => z.id === params.get('dzial')) ? params.get('dzial') : 'wyzwania')
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-12">
@@ -38,15 +39,14 @@ export default function Zasobnik() {
       </div>
 
       {zakladka === 'wyzwania' && <Wyzwania />}
-      {zakladka === 'biblioteka' && <Biblioteka />}
+      {zakladka === 'biblioteka' && <Biblioteka start={params.get('obszar') || ''} />}
       {zakladka === 'materialy' && <Materialy />}
     </main>
   )
 }
 
 function Wyzwania() {
-  const { biblioteka, fiszki } = useDane()
-  const pub = opublikowane(fiszki)
+  const { biblioteka } = useDane()
 
   return (
     <section>
@@ -58,15 +58,28 @@ function Wyzwania() {
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
         {OBSZARY.map((o, i) => {
           const innowacji = biblioteka.filter((b) => (b.obszary || []).includes(o.id)).length
-          const pomyslow = pub.filter((f) => f.obszar === o.id).length
           return (
             <li key={o.id}>
               <Link to={'/zasobnik/' + o.id} className="h-full flex flex-col gap-2 p-5 rounded-2xl bg-white border border-line no-underline text-ink hover:border-ink">
                 <span className="font-display font-extrabold text-3xl text-[#B8C2D0]">{String(i + 1).padStart(2, '0')}</span>
                 <span className="font-display font-bold text-xl">{o.nazwa}</span>
                 <span className="text-muted text-[15px]">{o.krotko}</span>
-                <span className="mt-auto pt-3 border-t border-[#E6EAF0] text-sm text-muted">
-                  {o.wyzwania.length} kluczowych wyzwań · {innowacji} innowacji · {pomyslow} pomysłów mieszkańców
+                {o.liczby?.[0] && (
+                  <span className="mt-1 rounded-xl bg-ground px-3 py-2.5 flex flex-col">
+                    <span className="font-display font-extrabold text-2xl leading-tight">{o.liczby[0].wartosc}</span>
+                    <span className="text-sm text-muted leading-snug">{o.liczby[0].opis}</span>
+                  </span>
+                )}
+                <span className="mt-auto pt-3 border-t border-[#E6EAF0] grid grid-cols-2 gap-2 text-center">
+                  {[
+                    [o.wyzwania.length, 'wyzwań'],
+                    [innowacji, 'innowacji'],
+                  ].map(([n, etykieta]) => (
+                    <span key={etykieta} className="flex flex-col">
+                      <strong className="text-lg leading-tight">{n}</strong>
+                      <span className="text-xs text-muted">{etykieta}</span>
+                    </span>
+                  ))}
                 </span>
               </Link>
             </li>
@@ -77,9 +90,9 @@ function Wyzwania() {
   )
 }
 
-function Biblioteka() {
+function Biblioteka({ start = '' }) {
   const { biblioteka } = useDane()
-  const [obszar, setObszar] = useState('')
+  const [obszar, setObszar] = useState(start)
   const lista = obszar ? biblioteka.filter((b) => (b.obszary || []).includes(obszar)) : biblioteka
 
   return (

@@ -4,6 +4,7 @@ export const STATUSY = {
   do_weryfikacji: { nazwa: 'Czeka na weryfikację', klasa: 'bg-clay-light text-clay-dark' },
   do_poprawy: { nazwa: 'Do poprawy', klasa: 'bg-[#FDE2E1] text-[#9B1C1C]' },
   opublikowana: { nazwa: 'Opublikowana', klasa: 'bg-teal-light text-teal-dark' },
+  odrzucona: { nazwa: 'Usunięta przez ROPS', klasa: 'bg-[#FDE2E1] text-[#9B1C1C]' },
   zarchiwizowana: { nazwa: 'Zarchiwizowana', klasa: 'bg-[#E6EAF0] text-muted' },
 }
 
