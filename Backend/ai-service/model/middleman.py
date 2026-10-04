@@ -123,6 +123,7 @@ class Plan(PlanDraft):
     checks: list[str]                   # co sprawdził kod (np. przekroczenie budżetu po poprawce)
     sources: list[Fragment]             # fragmenty materiałów ROPS użyte jako kontekst
     local_context: list[LocalIndicator] # dane gminy z Obserwatora (gdy podano commune_id)
+    based_on: list[str] = []            # innowacje, których analizy (budżety, ryzyka, partnerzy) wzięto pod uwagę
     model: str
 
 

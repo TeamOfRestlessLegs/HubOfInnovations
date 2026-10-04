@@ -13,6 +13,8 @@ import Tester from './pages/Tester.jsx'
 import Pomysl from './pages/Pomysl.jsx'
 import Panel from './pages/Panel.jsx'
 import Wdrozenie from './pages/Wdrozenie.jsx'
+import BazaWiedzy from './pages/BazaWiedzy.jsx'
+import BazaWiedzyInnowacja from './pages/BazaWiedzyInnowacja.jsx'
 
 // Lista stron. Nowa strona = nowy plik w pages/ + jedna linijka tutaj.
 // Strony, które coś zapisują (kreator, panel, wniosek), wymagają logowania.
@@ -25,6 +27,9 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/szukaj" element={<Matchmaking />} />
         <Route path="/innowacje" element={<Innowacje />} />
+        <Route path="/baza-wiedzy" element={<BazaWiedzy />} />
+        <Route path="/baza-wiedzy/:id" element={<BazaWiedzyInnowacja />} />
+        <Route path="/baza-wiedzy/:kategoria/:slug" element={<BazaWiedzyInnowacja />} />
         <Route path="/zasobnik" element={<Zasobnik />} />
         <Route path="/zasobnik/:id" element={<ZasobnikObszar />} />
         <Route path="/logowanie" element={<Logowanie />} />

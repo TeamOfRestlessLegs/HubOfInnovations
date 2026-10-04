@@ -8,6 +8,7 @@ import Dostepnosc from './Dostepnosc.jsx'
 const linki = [
   { to: '/szukaj', label: 'Znajdź rozwiązanie' },
   { to: '/innowacje', label: 'Pomysły' },
+  { to: '/baza-wiedzy', label: 'Baza wiedzy' },
 ]
 
 // Nazwa panelu zależy od roli

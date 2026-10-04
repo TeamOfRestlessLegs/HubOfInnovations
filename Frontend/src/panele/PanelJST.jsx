@@ -32,7 +32,7 @@ export default function PanelJST() {
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3.5 mb-10">
-        <Kafel nazwa="Do wdrożenia" liczba={mojeWdrozenia.length} link="/zasobnik?dzial=biblioteka" />
+        <Kafel nazwa="Do wdrożenia" liczba={mojeWdrozenia.length} link="/baza-wiedzy" />
         <Kafel nazwa="Zgłoszone wyzwania" liczba={mojeWyzwania.length} />
       </div>
 
@@ -44,7 +44,7 @@ export default function PanelJST() {
           </div>
           <Link to="/zasobnik?dzial=biblioteka" className="min-h-11 px-4 inline-flex items-center rounded-lg border-2 border-ink font-bold no-underline text-ink">Szukaj w Bibliotece →</Link>
         </div>
-        {mojeWdrozenia.length === 0 && <p className="text-muted">Nic jeszcze nie zapisaliście. W Bibliotece Innowacji albo w wątku pomysłu użyj „Zapisz” lub „Dopasuj do naszej gminy”.</p>}
+        {mojeWdrozenia.length === 0 && <p className="text-muted">Nic jeszcze nie zapisaliście. W Bazie wiedzy albo w wątku pomysłu użyj „Zapisz” lub „Dopasuj do naszej gminy”.</p>}
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
           {mojeWdrozenia.map((w) => (
             <li key={w.id}>
