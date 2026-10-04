@@ -3,7 +3,8 @@ from fastapi import APIRouter, HTTPException, Request
 from core.assistant import AssistantUnavailable, draft_application, suggest_field
 from core.deps import OpenAIClient
 from core.template import TemplateUnreadable, analyze_template
-from model.assistant import Draft, DraftRequest, FieldRequest, FieldSuggestion
+from core.visualizer import visualize
+from model.assistant import (Draft, DraftRequest, FieldRequest, FieldSuggestion, VisualRequest, Visualization)
 from model.template import TemplateAnalysis, TemplateRequest
 
 # Asystent wniosku: propozycje odpowiedzi do pól wniosku naboru i Canvy – autor każdą akceptuje albo odrzuca sam.
@@ -44,5 +45,15 @@ async def suggestField(body: FieldRequest, request: Request, client: OpenAIClien
     („krócej”, „dodaj, że pomaga nam KGW”)."""
     try:
         return await suggest_field(client, _model(request), body)
+    except AssistantUnavailable as e:
+        raise HTTPException(status_code=503, detail=f"Asystent niedostępny: {e}")
+
+
+@assistantRoute.post("/wizualizacja", response_model=Visualization)
+async def visualizeIdea(body: VisualRequest, request: Request, client: OpenAIClient) -> Visualization:
+    """Obraz poglądowy pomysłu (np. innowacyjnego przedmiotu) z fiszki; z `instruction` – kolejna wersja na prośbę autora."""
+    image_model = getattr(request.app.state, "image_model", "gpt-image-1")
+    try:
+        return await visualize(client, _model(request), image_model, body)
     except AssistantUnavailable as e:
         raise HTTPException(status_code=503, detail=f"Asystent niedostępny: {e}")

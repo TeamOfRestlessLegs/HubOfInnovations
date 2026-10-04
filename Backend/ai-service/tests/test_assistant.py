@@ -6,6 +6,8 @@
 import sys
 from pathlib import Path
 
+from types import SimpleNamespace
+
 import openai
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -96,3 +98,49 @@ def test_pole_z_poleceniem():
 
 def test_trim_bez_konca_zdania():
     assert _trim("słowo " * 50, 40).endswith("…") and len(_trim("słowo " * 50, 40)) <= 40
+
+
+# ---------------------------------------------------------------- wizualizacja pomysłu
+
+class AtrapaObrazow(AtrapaOpenAI):
+    def __init__(self, *odpowiedzi, b64="aGVsbG8=", blad_obrazu=None):
+        super().__init__(*odpowiedzi)
+        self.obrazy, self.b64, self.blad_obrazu = [], b64, blad_obrazu
+        self.images = SimpleNamespace(generate=self._generate)
+
+    async def _generate(self, **kwargs):
+        self.obrazy.append(kwargs)
+        if self.blad_obrazu:
+            raise self.blad_obrazu
+        return SimpleNamespace(data=[SimpleNamespace(b64_json=self.b64)])
+
+
+SCENA = {"prompt": "A wooden bench with a QR code plaque in a village square.", "caption": "Wizualizacja poglądowa: ławka z kodem QR."}
+FISZKA = {"idea": KONTEKST["idea"]}
+
+
+def test_wizualizacja_zwraca_obraz_i_podpis():
+    atrapa = AtrapaObrazow(SCENA)
+    odp = klient(atrapa).post("/asystent/wizualizacja", json={**FISZKA, "style": "szkic"})
+    assert odp.status_code == 200
+    d = odp.json()
+    assert d["image"] == "data:image/png;base64,aGVsbG8=" and d["caption"].startswith("Wizualizacja poglądowa")
+    assert atrapa.obrazy[0]["prompt"].startswith("A wooden bench") and "sketch" in atrapa.obrazy[0]["prompt"]
+    assert "<dane_uzytkownika>" in atrapa.wywolania[0]["messages"][1]["content"]
+
+
+def test_wizualizacja_z_poleceniem():
+    atrapa = AtrapaObrazow(SCENA)
+    klient(atrapa).post("/asystent/wizualizacja", json={**FISZKA, "instruction": "dodaj stół"})
+    assert "<polecenie>dodaj stół</polecenie>" in atrapa.wywolania[0]["messages"][1]["content"]
+
+
+def test_wizualizacja_blad_obrazu_503():
+    atrapa = AtrapaObrazow(SCENA, blad_obrazu=openai.APIConnectionError(request=None))
+    odp = klient(atrapa).post("/asystent/wizualizacja", json=FISZKA)
+    assert odp.status_code == 503 and "Asystent niedostępny" in odp.json()["detail"]
+
+
+def test_wizualizacja_pusta_odpowiedz_503():
+    odp = klient(AtrapaObrazow(SCENA, b64=None)).post("/asystent/wizualizacja", json=FISZKA)
+    assert odp.status_code == 503
