@@ -22,7 +22,7 @@ export default function BazaWiedzyInnowacja() {
       const b = biblioteka.find((x) => x.id === id)
       if (b) setInn({
         id: b.id, tytul: b.tytul, kategoria: (b.obszary || []).map((o) => obszarPoId(o)?.nazwa).filter(Boolean).join(' · '),
-        opis: b.opis, url: b.url !== '#' ? b.url : null, miejsce: b.miejsce, materialy: (b.zalaczniki || []).map((z) => ({ nazwa: z.nazwa, url: z.url })),
+        opis: b.opis, url: b.url !== '#' ? b.url : null, miejsce: b.miejsce,
       })
       else setBlad('Nie ma takiej innowacji.')
       return
@@ -31,7 +31,6 @@ export default function BazaWiedzyInnowacja() {
     zapytaj('GET', `/innovations/${kategoria}/${slug}`).then(
       (d) => setInn({
         id: d.id, tytul: d.title, kategoria: d.category, opis: d.description || d.summary, url: d.url, rops: true,
-        materialy: (d.materials || []).map((m) => ({ nazwa: m.file, zrodlo: m.source })),
       }),
       (e) => setBlad(e.message),
     )
@@ -53,20 +52,6 @@ export default function BazaWiedzyInnowacja() {
           </header>
 
           <Markdown duzy tekst={inn.opis} />
-
-          {inn.materialy.length > 0 && (
-            <section aria-labelledby="h-mat">
-              <h2 id="h-mat" className="font-display text-2xl font-bold mb-3">Materiały</h2>
-              <ul className="flex flex-col gap-2">
-                {inn.materialy.map((m) => (
-                  <li key={m.nazwa} className="bg-white border border-line rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-3">
-                    {m.url ? <a href={m.url} className="font-bold">{m.nazwa}</a> : <span className="font-bold break-all">{m.nazwa}</span>}
-                    {m.zrodlo && <span className="text-sm text-muted">{m.zrodlo === 'pdf_materialy' ? 'materiały' : 'dowiedz się więcej'}</span>}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
 
           {ja?.rola === 'jst' && (
             <section aria-labelledby="h-mid" className="rounded-2xl bg-clay-light p-5">
