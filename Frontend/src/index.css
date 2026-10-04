@@ -28,21 +28,85 @@ body {
   outline-offset: 2px;
 }
 
-/* Wysoki kontrast – włączany przyciskiem w pasku dostępności */
+/* ── Wysoki kontrast: czarno-żółty (WCAG AAA, kontrast 19,6 : 1) ──────────────
+   Włączany przyciskiem w pasku dostępności – klasa .kontrast na <html>.
+   Działa na całej stronie bez zmian w komponentach:
+   1) wszystko: czarne tło, żółty tekst i ramki,
+   2) elementy „wypełnione” (przyciski główne, zaznaczone zakładki, wciśnięte przełączniki)
+      odwracamy: żółte tło, czarny tekst – żeby nadal było widać, co jest akcją albo wyborem. */
 .kontrast {
-  --color-ink: #000000;
-  --color-ground: #FFFFFF;
-  --color-line: #000000;
-  --color-muted: #1A1A1A;
-  --color-teal: #004D3B;
-  --color-teal-dark: #00261D;
-  --color-teal-light: #FFFFFF;
-  --color-clay: #7A2500;
-  --color-clay-dark: #4D1700;
-  --color-clay-light: #FFFFFF;
+  --kontrast-tlo: #000000;
+  --kontrast-tekst: #FFFF00;
+  --color-ink: #FFFF00;
+  --color-ground: #000000;
+  --color-line: #FFFF00;
+  --color-muted: #FFFF00;
+  --color-teal: #FFFF00;
+  --color-teal-dark: #FFFF00;
+  --color-teal-light: #000000;
+  --color-clay: #FFFF00;
+  --color-clay-dark: #FFFF00;
+  --color-clay-light: #000000;
+  color-scheme: dark;
+  background: var(--kontrast-tlo);
 }
-.kontrast a { text-decoration: underline; }
-.kontrast :focus-visible { outline: 4px solid #000; box-shadow: 0 0 0 7px #FFD400; }
-.kontrast [class*="bg-[#"] { background-color: #FFFFFF !important; }
-.kontrast [class*="border"] { border-color: #000000; }
-.kontrast .pasek-pusty { background: #FFFFFF; box-shadow: inset 0 0 0 2px #000000; }
+.kontrast body { background: var(--kontrast-tlo); color: var(--kontrast-tekst); }
+
+/* 1) Czarne tło, żółty tekst i ramki wszędzie */
+.kontrast * {
+  color: var(--kontrast-tekst) !important;
+  border-color: var(--kontrast-tekst) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+.kontrast [class*="bg-"] { background-color: var(--kontrast-tlo) !important; }
+.kontrast svg [fill]:not([fill="none"]) { fill: currentColor; }
+.kontrast svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
+/* wypełnione prostokąty (np. tło logo) jako czarne – na nich żółte linie */
+.kontrast svg rect[fill]:not([fill="none"]) { fill: var(--kontrast-tlo); stroke: currentColor; stroke-width: 2px; }
+
+/* Karty i sekcje bez ramki dostają ją, żeby było widać ich granice na czarnym tle */
+.kontrast :is(article, section, aside, figure, li)[class*="bg-"] { outline: 1px solid var(--kontrast-tekst); outline-offset: -1px; }
+/* Etykiety (pigułki) i przyciski z samym tłem – bez tła byłyby niewidoczne, więc dostają obwódkę */
+.kontrast :is(span, a, button, label)[class*="bg-"][class*="rounded"]:not(nav *) { outline: 1px solid var(--kontrast-tekst); outline-offset: -1px; }
+
+/* 2) Elementy wypełnione → odwrócone (żółte tło, czarny tekst) */
+.kontrast :is(.bg-ink, .bg-teal, .bg-teal-dark, .bg-clay, .bg-clay-dark, [class~="bg-[#9B1C1C]"], [class~="bg-[#1C2E52]"], [aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]),
+.kontrast :is(.bg-ink, .bg-teal, .bg-teal-dark, .bg-clay, .bg-clay-dark, [class~="bg-[#9B1C1C]"], [class~="bg-[#1C2E52]"], [aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]) * {
+  background-color: var(--kontrast-tekst) !important;
+  color: var(--kontrast-tlo) !important;
+  border-color: var(--kontrast-tlo) !important;
+}
+/* Duże ciemne sekcje (np. baner naboru) czytają się lepiej jako czarne z ramką niż całe żółte */
+.kontrast :is(section, aside, header, footer)[class~="bg-ink"],
+.kontrast :is(section, aside, header, footer)[class~="bg-[#1C2E52]"] {
+  background-color: var(--kontrast-tlo) !important;
+  color: var(--kontrast-tekst) !important;
+  border: 3px solid var(--kontrast-tekst) !important;
+}
+.kontrast :is(section, aside, header, footer)[class~="bg-ink"] > :not(a):not(button),
+.kontrast :is(section, aside, header, footer)[class~="bg-[#1C2E52]"] > :not(a):not(button) {
+  background-color: transparent !important;
+  color: var(--kontrast-tekst) !important;
+}
+
+/* Pola formularzy */
+.kontrast :is(input, textarea, select) {
+  background-color: var(--kontrast-tlo) !important;
+  color: var(--kontrast-tekst) !important;
+  border: 2px solid var(--kontrast-tekst) !important;
+}
+.kontrast ::placeholder { color: var(--kontrast-tekst) !important; opacity: 0.75; }
+
+/* Linki zawsze podkreślone, przyciski wyłączone przekreślone wzrokowo (nie tylko przygaszone) */
+.kontrast a { text-decoration: underline !important; text-underline-offset: 3px; }
+.kontrast :disabled { opacity: 0.6 !important; border-style: dashed !important; }
+
+/* Fokus z klawiatury – gruba żółta obwódka z czarnym odstępem, widoczna i na żółtych przyciskach */
+.kontrast :focus-visible { outline: 4px solid var(--kontrast-tekst) !important; outline-offset: 3px; box-shadow: 0 0 0 3px var(--kontrast-tlo) !important; }
+
+/* Pasek etapu: puste segmenty jako żółty kontur */
+.kontrast .pasek-pusty { background: var(--kontrast-tlo) !important; box-shadow: inset 0 0 0 2px var(--kontrast-tekst) !important; }
+
+/* Obrazki (okładki raportów, podglądy) bez zmian, ale w żółtej ramce */
+.kontrast img { outline: 2px solid var(--kontrast-tekst); }

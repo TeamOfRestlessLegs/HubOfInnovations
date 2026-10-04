@@ -54,6 +54,7 @@ function stanStartowy() {
     aktualnosci: aktualnosciStartowe,
     komentarze: komentarzeStartowe,
     pytania: pytaniaStartowe,
+    przejecia: [],
     wdrozenia: [],
   }
 }

@@ -14,6 +14,9 @@ import { googleLogout } from '@react-oauth/google'
 const AuthContext = createContext(null)
 const KLUCZ = 'splot-uzytkownik'
 const API = import.meta.env.VITE_API_URL
+// Tryb demo (wejście bez Google + przełączanie ról): lokalnie (npm run dev), bez backendu
+// albo gdy VITE_DEMO=true – dzięki temu wersja na Amplify działa jako demo konkursowe.
+export const TRYB_DEMO = import.meta.env.DEV || import.meta.env.VITE_DEMO === 'true' || !API
 
 // Cztery grupy z wyzwania. Nowe konto = resident; pozostałe role nadaje ROPS (docelowo w panelu / w bazie).
 export const ROLE = {
@@ -70,10 +73,10 @@ export function AuthProvider({ children }) {
   }
 
   // Tylko w trybie demo: przełączanie roli, żeby pokazać panele jury
-  const zmienRoleDemo = API ? null : (rola) => zapisz({ ...uzytkownik, rola, ...(rola === 'jst' && !uzytkownik.powiat && { powiat: 'myślenicki' }) })
+  const zmienRoleDemo = !TRYB_DEMO ? null : (rola) => zapisz({ ...uzytkownik, rola, ...(rola === 'jst' && !uzytkownik.powiat && { powiat: 'myślenicki' }) })
 
-  // Tylko podczas `npm run dev`: wejście bez Google, do testowania stron
-  const zalogujDemo = import.meta.env.DEV
+  // Tryb demo: wejście bez Google, żeby pokazać platformę oczami każdej roli
+  const zalogujDemo = TRYB_DEMO
     ? (rola) => zapisz({ id: 'demo-' + rola, imie: 'Test ' + ROLE[rola], email: 'demo@splot.local', zdjecie: null, rola, token: null, ...(rola === 'jst' && { powiat: 'myślenicki' }) })
     : null
 
