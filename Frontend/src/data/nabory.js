@@ -1,7 +1,6 @@
 // Nabory grantowe i szablon wniosku.
 // ROPS tworzy nabór w panelu; użytkownik generuje z fiszki wniosek dopasowany do naboru.
 
-import { INTENSYWNOSC, SKALA, CZESTOTLIWOSC, znajdz } from './fiszka.js'
 import { ETAPY } from './etapy.js'
 import { obszarPoId } from './obszary.js'
 import { DANE_FISZKI, odpowiedzCanvy, pytanieCanvy } from './asystent.js'
@@ -22,18 +21,14 @@ export const DOMYSLNE_POLA = [
 // Wypełnia pole wniosku danymi z fiszki i Canvy (bez AI – AI może potem przeredagować)
 export function wypelnijZFiszki(zrodlo, f, canva = {}) {
   const lista = (x) => (x || []).join(', ')
-  const obszar = obszarPoId(f.obszar)
   switch (zrodlo) {
     case 'problem':
       return [
         /[.!?]$/.test(f.problem.trim()) ? f.problem.trim() : f.problem.trim() + '.',
-        (f.powiat || obszar) && `Problem ${f.powiat ? `występuje w pow. ${f.powiat}` : 'występuje w Małopolsce'}${obszar ? ` i dotyczy obszaru „${obszar.nazwa}”` : ''}.`,
-        f.intensywnosc && `Ocena mieszkańców: ${znajdz(INTENSYWNOSC, f.intensywnosc)?.nazwa.toLowerCase()}, występuje ${znajdz(CZESTOTLIWOSC, f.czestotliwosc)?.nazwa.toLowerCase() || '—'}.`,
       ].filter(Boolean).join(' ')
     case 'odbiorcy': {
       const grupy = [...(f.grupy || []), f.grupaInna].filter(Boolean).join(', ')
-      const skala = znajdz(SKALA, f.skala)
-      return `Odbiorcy: ${grupy}.${skala ? ` Skala: ${skala.nazwa.toLowerCase()} (${skala.opis}).` : ''}`
+      return `Odbiorcy: ${grupy}.`
     }
     case 'rozwiazanie':
       return [`${f.tytul}. ${f.opis}`, f.istota && `Nowość: ${f.istota}`].filter(Boolean).join(' ')
@@ -41,7 +36,6 @@ export function wypelnijZFiszki(zrodlo, f, canva = {}) {
       return `Obecny etap: ${ETAPY.find((e) => e.nr === f.etap)?.nazwa || '—'}. Pomysł ma ${(f.poparcia || 0) + (f.poparli?.length || 0)} poparć mieszkańców na platformie Małopolski Splot.`
     case 'zasoby':
       return [
-        f.szuka && `Potrzebujemy: ${f.szuka}.`,
         canva.stale?.length && `Koszty stałe: ${lista(canva.stale)}.`,
         canva.zmienne?.length && `Koszty zmienne: ${lista(canva.zmienne)}.`,
         canva.taniej && `Partnerzy obniżający koszty: ${canva.taniej}`,

@@ -7,8 +7,6 @@ import PasekEtapu from '../components/PasekEtapu.jsx'
 import StatusWpisu from '../components/StatusWpisu.jsx'
 import SzczegolyFiszki from '../components/SzczegolyFiszki.jsx'
 import WzorWniosku from '../components/WzorWniosku.jsx'
-import { RaportOpinii } from '../components/RaportOpinii.jsx'
-import { STATUS_TESTU, tenSamZasob } from '../data/tester.js'
 
 const STATUS_WNIOSKU = {
   szkic: { nazwa: 'Szkic', klasa: 'bg-[#E6EAF0] text-ink' },
@@ -20,9 +18,8 @@ const STATUS_WNIOSKU = {
 // Panel użytkownika: moje pomysły (status, uwagi ROPS, etapy) i moje wnioski do naborów
 export default function PanelMieszkanca() {
   const { uzytkownik } = useAuth()
-  const { fiszki, nabory, wnioski, testy, zgloszeniaTestow, opinie, pytania, poprosOEtap } = useDane()
+  const { fiszki, nabory, wnioski, pytania, przejecia, poprosOEtap } = useDane()
   const sledzone = fiszki.filter((f) => (f.poparli || []).includes(uzytkownik.id) && f.autorId !== uzytkownik.id)
-  const mojeTesty = zgloszeniaTestow.filter((z) => z.uzytkownikId === uzytkownik.id)
   const moje = fiszki.filter((f) => f.autorId === uzytkownik.id)
   const mojeWnioski = wnioski.filter((w) => w.autorId === uzytkownik.id)
   const otwarte = nabory.filter(naborOtwarty)
@@ -73,7 +70,7 @@ export default function PanelMieszkanca() {
               <li key={f.id}>
                 <Link to={'/pomysl/' + f.id} className="h-full flex flex-col gap-1 bg-white border border-line rounded-2xl px-5 py-4 no-underline text-ink hover:border-ink">
                   <strong>{f.tytul}</strong>
-                  <span className="text-sm text-muted">{f.powiat && `pow. ${f.powiat} · `}otwórz wątek →</span>
+                  <span className="text-sm text-muted">otwórz wątek →</span>
                 </Link>
               </li>
             ))}
@@ -81,22 +78,6 @@ export default function PanelMieszkanca() {
         </section>
       )}
 
-      {mojeTesty.length > 0 && (
-        <section className="mb-10">
-          <h2 className="font-display font-bold text-2xl mb-4">Moje testy</h2>
-          <ul className="flex flex-col gap-2">
-            {mojeTesty.map((z) => {
-              const t = testy.find((x) => x.id === z.testId)
-              return (
-                <li key={z.id} className="bg-white border border-line rounded-2xl px-5 py-4 flex flex-wrap justify-between items-center gap-3">
-                  <span><strong>{t?.tytul}</strong> <span className={'ml-2 px-2 py-0.5 rounded-full text-xs font-bold ' + STATUS_TESTU[t?.status || 'rekrutacja'].klasa}>{STATUS_TESTU[t?.status || 'rekrutacja'].nazwa}</span></span>
-                  <span className="text-[15px]">{{ zgloszony: 'Czeka na decyzję ROPS', przyjety: 'Jesteś testerem', odrzucony: 'Bez miejsca' }[z.status]} · <Link to="/tester" className="font-bold">Tester →</Link></span>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
 
       <h2 className="font-display font-bold text-2xl mb-4">Moje pomysły</h2>
       {moje.length === 0 && (
@@ -108,8 +89,11 @@ export default function PanelMieszkanca() {
       <ul className="flex flex-col gap-4">
         {moje.map((i) => {
           const nastepny = ETAPY.find((e) => e.nr === i.etap + 1 && e.opis)
-          // Nabory, do których pasuje ta fiszka (ten sam obszar), a wniosku jeszcze nie ma
-          const pasujace = i.status === 'opublikowana'
+          // Otwarte nabory, do których ta fiszka nie ma jeszcze wniosku
+          // Po przejęciu przez gminę to ona składa wnioski i zmienia etap – autor zostaje pomysłodawcą
+          const przejety = i.prowadzacy && !i.odJST
+          const prosby = przejecia.filter((p) => p.fiszkaId === i.id && p.status === 'czeka')
+          const pasujace = i.status === 'opublikowana' && !przejety
             ? otwarte.filter((n) => !wnioski.some((w) => w.fiszkaId === i.id && w.naborId === n.id))
             : []
           return (
@@ -117,7 +101,6 @@ export default function PanelMieszkanca() {
               <div className="flex flex-wrap justify-between gap-3 items-start">
                 <div>
                   <h3 className="font-display text-xl font-bold"><Link to={'/pomysl/' + i.id} className="text-ink no-underline hover:underline">{i.tytul}</Link></h3>
-                  {i.powiat && <p className="text-sm text-muted">pow. {i.powiat}</p>}
                 </div>
                 <StatusWpisu status={i.status} />
               </div>
@@ -129,15 +112,6 @@ export default function PanelMieszkanca() {
                   {i.powodOdrzucenia && <p><strong>Powód:</strong> „{i.powodOdrzucenia}”</p>}
                   <p className="text-[15px]">Pomysł nie jest publiczny. Możesz zgłosić nowy, dopracowany pomysł.</p>
                 </div>
-              )}
-
-              {i.prosbaPrzejecia && (
-                <Link to={'/pomysl/' + i.id} className="rounded-xl bg-clay-light p-4 font-bold text-clay-dark no-underline">Gmina (pow. {i.prosbaPrzejecia.powiat}) chce poprowadzić ten pomysł – zdecyduj w wątku →</Link>
-              )}
-              {i.prowadzacy && !i.odJST && <p className="text-[15px]">Pomysł prowadzi gmina (pow. {i.prowadzacy.powiat}). Jesteś pomysłodawcą.</p>}
-              <Rozmowa fiszka={i} pytan={pytania.filter((q) => q.fiszkaId === i.id && q.odpowiedzi.length).length} />
-              {opinie.some((o) => tenSamZasob(o.zasob, { typ: 'fiszka', id: i.id })) && (
-                <RaportOpinii tytul="Raport z testów – co mówią testerzy" opinie={opinie.filter((o) => tenSamZasob(o.zasob, { typ: 'fiszka', id: i.id }))} />
               )}
 
               {i.status === 'do_weryfikacji' && (
@@ -152,18 +126,17 @@ export default function PanelMieszkanca() {
                 </div>
               )}
 
-              {i.prosbaPrzejecia && (
-                <Link to={'/pomysl/' + i.id} className="rounded-xl bg-clay-light p-4 font-bold text-clay-dark no-underline">Gmina (pow. {i.prosbaPrzejecia.powiat}) chce poprowadzić ten pomysł – zdecyduj w wątku →</Link>
+              {prosby.length > 0 && (
+                <Link to={'/pomysl/' + i.id} className="rounded-xl bg-clay-light p-4 font-bold text-clay-dark no-underline">
+                  {prosby.length === 1 ? `Gmina (pow. ${prosby[0].powiat}) chce poprowadzić ten pomysł` : `${prosby.length} gminy chcą poprowadzić ten pomysł`} – zdecyduj w wątku →
+                </Link>
               )}
-              {i.prowadzacy && !i.odJST && <p className="text-[15px]">Pomysł prowadzi gmina (pow. {i.prowadzacy.powiat}). Jesteś pomysłodawcą.</p>}
+              {przejety && <p className="rounded-xl bg-ground p-4 text-[15px]"><strong>Pomysł prowadzi gmina</strong> ({i.prowadzacy.imie}, pow. {i.prowadzacy.powiat}). Jesteś pomysłodawcą – gmina edytuje fiszkę, zmienia etap i składa wnioski do naborów.</p>}
               <Rozmowa fiszka={i} pytan={pytania.filter((q) => q.fiszkaId === i.id && q.odpowiedzi.length).length} />
-              {opinie.some((o) => tenSamZasob(o.zasob, { typ: 'fiszka', id: i.id })) && (
-                <RaportOpinii tytul="Raport z testów – co mówią testerzy" opinie={opinie.filter((o) => tenSamZasob(o.zasob, { typ: 'fiszka', id: i.id }))} />
-              )}
 
               {pasujace.map((n) => (
                 <div key={n.id} className="rounded-xl bg-clay-light p-4 flex flex-wrap justify-between items-center gap-3">
-                  <p><strong>Trwa nabór pasujący do tego pomysłu:</strong> {n.nazwa} (do {new Date(n.termin).toLocaleDateString('pl-PL')})</p>
+                  <p><strong>Trwa nabór:</strong> {n.nazwa} (do {new Date(n.termin).toLocaleDateString('pl-PL')})</p>
                   <div className="flex flex-wrap gap-2">
                   <WzorWniosku nabor={n} />
                   <Link to={`/wniosek/${i.id}/${n.id}`} className="min-h-11 px-4 inline-flex items-center rounded-lg bg-clay text-white font-bold no-underline">
@@ -173,7 +146,7 @@ export default function PanelMieszkanca() {
                 </div>
               ))}
 
-              {i.status === 'opublikowana' && nastepny && (
+              {i.status === 'opublikowana' && nastepny && !przejety && (
                 i.prosbaOEtap ? (
                   <p className="text-base text-clay-dark font-bold">Prośba o etap „{nastepny.nazwa}” czeka na decyzję ROPS.</p>
                 ) : (
