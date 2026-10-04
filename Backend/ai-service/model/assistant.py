@@ -80,3 +80,26 @@ class Draft(DraftModel):
 class FieldSuggestion(Suggestion):
     checks: list[str]
     model: str
+
+
+# ------------------------------------------------------------------ wizualizacja pomysłu
+
+class VisualRequest(BaseModel):
+    """Fiszka pomysłu (dane od użytkownika) + opcjonalna prośba o zmianę obrazu."""
+    idea: IdeaInfo
+    style: Literal["szkic", "ilustracja", "fotorealistyczna"] = "ilustracja"
+    instruction: str | None = Field(None, min_length=2, max_length=300, examples=["dodaj drewniany stół"])
+
+
+class ImagePrompt(BaseModel):
+    """JSON od modelu: opis obrazu po angielsku (model graficzny lepiej go rozumie) i podpis po polsku."""
+    prompt: str = Field(min_length=10, max_length=1500)
+    caption: str = Field("", max_length=300)
+
+
+class Visualization(BaseModel):
+    image: str              # data URL (PNG) – front wstawia go prosto w <img>
+    caption: str            # podpis po polsku
+    prompt: str             # opis, z którego powstał obraz
+    model: str
+    image_model: str

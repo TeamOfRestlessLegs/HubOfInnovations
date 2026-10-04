@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     observer_db_path: Path | None = None  # OBSERVER_DB_PATH — domyślnie Dane/data/obserwator.sqlite
     middleman_model: str = "gpt-4o-mini"  # MIDDLEMAN_MODEL — model OpenAI piszący plany wdrożenia
     assistant_model: str = "gpt-4o-mini"  # ASSISTANT_MODEL — model OpenAI asystenta wniosku
+    image_model: str = "gpt-image-1"  # IMAGE_MODEL — model OpenAI rysujący wizualizację pomysłu
 
 
 @lru_cache

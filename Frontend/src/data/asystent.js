@@ -115,3 +115,10 @@ export async function odczytajWzor(wzor, nabor) {
     uwagi: a.checks,
   }
 }
+
+// Obraz poglądowy pomysłu z fiszki → { image (data URL), caption, prompt }; `polecenie` – poprawka („dodaj stół”)
+export const wizualizacjaPomyslu = (fiszka, { styl = 'ilustracja', polecenie } = {}) =>
+  zapytaj('POST', '/asystent/wizualizacja', {
+    idea: kontekstAI(fiszka).idea, style: styl,
+    ...(polecenie ? { instruction: polecenie } : {}),
+  })

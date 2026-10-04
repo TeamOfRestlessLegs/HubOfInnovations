@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
     app.state.openai = openai
     app.state.middleman_model = settings.middleman_model
     app.state.assistant_model = settings.assistant_model
+    app.state.image_model = settings.image_model
     app.state.store = VectorStore(
         settings.vector_db_path, settings.collection, settings.profiles_collection, openai
     )

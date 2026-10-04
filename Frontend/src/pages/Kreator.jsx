@@ -8,6 +8,7 @@ import WzorWniosku from '../components/WzorWniosku.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 import SzczegolyFiszki from '../components/SzczegolyFiszki.jsx'
 import PasekEtapu from '../components/PasekEtapu.jsx'
+import WizualizacjaPomyslu from '../components/WizualizacjaPomyslu.jsx'
 
 // Mieszkaniec sam deklaruje tylko etap 1–2; wyższe wymagają dowodu i zgody ROPS
 const MAX_ETAP_AUTORA = 2
@@ -184,6 +185,8 @@ function KreatorFiszki() {
             </div>
             <p className="text-base text-muted mt-2">Wyższe etapy potwierdza ROPS – po testach poprosisz o nie w swoim panelu.</p>
           </fieldset>
+
+          <WizualizacjaPomyslu fiszka={fiszka} />
         </section>
       )}
 
