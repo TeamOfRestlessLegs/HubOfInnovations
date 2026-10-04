@@ -42,6 +42,20 @@ class InnovationsClient:
         self._cache[innovation_id] = (time.monotonic(), data)
         return data
 
+    async def published_ideas(self, page_size: int = 100) -> list[dict]:
+        """Wszystkie opublikowane pomysły (GET /api/ideas zwraca tylko PUBLISHED). Rzuca httpx.HTTPError."""
+        ideas, page = [], 0
+        while True:
+            response = await self._http.get("/api/ideas", params={"page": page, "size": page_size})
+            response.raise_for_status()
+            data = response.json()
+            ideas += data.get("content", [])
+            # Spring serializuje Page płasko (totalPages) albo jako PagedModel (page.totalPages)
+            total_pages = data.get("totalPages", data.get("page", {}).get("totalPages", 1))
+            page += 1
+            if page >= total_pages or not data.get("content"):
+                return ideas
+
     async def enrich(self, hits: list[dict]) -> bool:
         """Dokleja do wyników wyszukiwania opis i linki z serwisu innovations.
 

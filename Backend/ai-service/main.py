@@ -10,9 +10,12 @@ import uvicorn
 from core.analysis_cache import AnalysisCache
 from core.analyzer import InnovationAnalyzer
 from core.config import get_settings
+from core.idea_analyzer import IdeaAnalyzer
+from core.ideas_search import IdeasSearch
 from core.innovations_client import InnovationsClient
 from core.observer_store import ObserverStore
 from core.vector_store import VectorStore
+from routes.ideas import ideasRoute
 from routes.innovations import innovationsRoute
 from routes.observer import observerRoute
 
@@ -28,6 +31,10 @@ async def lifespan(app: FastAPI):
     app.state.innovations = InnovationsClient(settings.innovations_api_url, settings.innovations_timeout)
     analysis_cache = AnalysisCache(settings.analysis_db_path)
     app.state.analyzer = InnovationAnalyzer(app.state.store, openai, analysis_cache, settings.analysis_model)
+    app.state.ideas = IdeasSearch(app.state.innovations, app.state.store, settings.idea_embeddings_path)
+    app.state.idea_analyzer = IdeaAnalyzer(
+        app.state.store, app.state.ideas, app.state.innovations, openai, settings.analysis_model
+    )
     # Obserwator jest opcjonalny: bez bazy / pakietu splot_dane działa reszta serwisu, a /observer zwraca 503
     app.state.observer, app.state.observer_error, warm_up = None, None, None
     try:
@@ -42,6 +49,7 @@ async def lifespan(app: FastAPI):
         warm_up.cancel()
     await app.state.innovations.close()
     analysis_cache.close()
+    app.state.ideas.close()
     await openai.close()
 
 
@@ -51,6 +59,7 @@ app = FastAPI(
 )
 
 app.include_router(innovationsRoute)
+app.include_router(ideasRoute)
 app.include_router(observerRoute)
 
 

@@ -6,6 +6,7 @@ import chromadb
 from openai import AsyncOpenAI
 
 from core.bm25 import BM25
+from core.ranking import rrf
 
 MAX_FRAGMENTS = 3
 CHUNK_CANDIDATES = 100  # ile fragmentów bierzemy pod uwagę przy rankingu innowacji
@@ -13,7 +14,6 @@ PROFILE_CANDIDATES = 50
 
 # Reciprocal Rank Fusion: łączy rankingi z różnych metod bez porównywania ich surowych wyników.
 # Wagi dobrane na tests/eval_search.py — zmieniaj je razem z uruchomieniem evala.
-RRF_K = 60
 WEIGHTS = {"profile": 1.0, "bm25": 1.0, "chunks": 0.5}
 
 
@@ -78,7 +78,7 @@ class VectorStore:
             "bm25": self._bm25_ranking(query, category),
             "chunks": list(dict.fromkeys(m["innowacja_id"] for m in chunk_result["metadatas"][0])),
         }
-        fused = self._rrf(rankings)[:limit]
+        fused = rrf(rankings, WEIGHTS)[:limit]
         return await self._hits(fused, embedding)
 
     async def similar(self, innovation_id: str, limit: int = 5) -> list[dict]:
@@ -102,6 +102,10 @@ class VectorStore:
     def has_keyword_match(self, query: str) -> bool:
         """Czy którekolwiek słowo zapytania występuje w profilach innowacji (BM25)."""
         return bool(self._bm25.scores(query))
+
+    def categories(self) -> dict[str, str]:
+        """{slug: nazwa} wszystkich kategorii innowacji."""
+        return {m["kategoria_slug"]: m["kategoria"] for m in self._profile_meta.values()}
 
     def innovation_meta(self, innovation_id: str) -> dict:
         meta = self._profile_meta[innovation_id]
@@ -155,16 +159,6 @@ class VectorStore:
         if category:
             ids = [i for i in ids if self._profile_meta[i]["kategoria_slug"] == category]
         return ids
-
-    @staticmethod
-    def _rrf(rankings: dict[str, list[str]]) -> list[tuple[str, float]]:
-        """Wynik 0..1: 1 = innowacja pierwsza we wszystkich rankingach."""
-        scores: dict[str, float] = {}
-        for name, ids in rankings.items():
-            for rank, innovation_id in enumerate(ids):
-                scores[innovation_id] = scores.get(innovation_id, 0) + WEIGHTS[name] / (RRF_K + rank + 1)
-        best_possible = sum(WEIGHTS.values()) / (RRF_K + 1)
-        return sorted(((i, round(s / best_possible, 4)) for i, s in scores.items()), key=lambda x: -x[1])
 
     async def _hits(self, ranked: list[tuple[str, float]], embedding: list[float]) -> list[dict]:
         fragments = await asyncio.gather(*(self._fragments(i, embedding) for i, _ in ranked))
