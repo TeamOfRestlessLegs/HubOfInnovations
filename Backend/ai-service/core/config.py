@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     splot_dane_dir: Path = DEFAULT_DANE_DIR  # SPLOT_DANE_DIR — pakiet splot_dane (Obserwator)
     innovations_api_url: str = "http://127.0.0.1:8081"  # INNOVATIONS_API_URL — serwis innovations (Java)
     innovations_timeout: float = 3.0  # INNOVATIONS_TIMEOUT — sekundy; po nim /search zwraca wyniki bez szczegółów
+    analysis_model: str = "gpt-4.1-mini"  # ANALYSIS_MODEL — model do analiz innowacji
+    analysis_db_path: Path = SERVICE_DIR / "data" / "analyses.sqlite"  # ANALYSIS_DB_PATH — cache analiz
     observer_db_path: Path | None = None  # OBSERVER_DB_PATH — domyślnie Dane/data/obserwator.sqlite
 
 
