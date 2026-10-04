@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { useDane, idWdrozenia, STATUSY_WDROZENIA } from '../data/DaneContext.jsx'
 
-// Dla gminy (JST): „Zapisz” odkłada innowację / pomysł na listę „Do wdrożenia” w Panelu gminy,
+// Dla gminy (JST): „Zapisz” odkłada innowację / pomysł na listę „Do wdrożenia” w Panelu,
 // „Dopasuj do naszej gminy” otwiera Middlemana (plan wdrożenia pod budżet i ludzi gminy).
 // zasob: { typ: 'biblioteka' | 'fiszka', id, tytul }
 export default function AkcjeWdrozenia({ zasob, kompaktowo = false }) {
@@ -19,7 +19,7 @@ export default function AkcjeWdrozenia({ zasob, kompaktowo = false }) {
     <div className={'flex flex-wrap items-center gap-2 ' + (kompaktowo ? '' : 'w-full')}>
       {zapisane ? (
         <Link to="/panel" className={przycisk + 'border-2 border-line text-ink'}>
-          ✓ {STATUSY_WDROZENIA[zapisane.status].nazwa}<span className="sr-only"> – w Panelu gminy</span>
+          ✓ {STATUSY_WDROZENIA[zapisane.status].nazwa}<span className="sr-only"> – w Panelu</span>
         </Link>
       ) : (
         <button type="button" onClick={() => zapiszDoWdrozenia(zasob)} className={przycisk + 'border-2 border-ink text-ink'}>

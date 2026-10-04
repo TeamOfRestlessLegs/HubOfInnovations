@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { useDane, STATUSY_WDROZENIA } from '../data/DaneContext.jsx'
-import { OBSZARY, obszarPoId } from '../data/obszary.js'
 import { powiaty } from '../data/zasobnik.js'
+import { liczbaPoparc } from '../data/watekFiszki.js'
+import { kiedy } from '../data/czas.js'
 
-// Panel gminy (JST): zgłasza lokalne wyzwania, widzi sygnały mieszkańców ze swojego powiatu,
+// Panel (JST): zgłasza lokalne wyzwania, widzi sygnały mieszkańców ze swojego powiatu,
 // prowadzi pomysły i śledzi ranking potrzeb mieszkańców.
 export default function PanelJST() {
   const { uzytkownik: ja, ustawProfil } = useAuth()
@@ -20,7 +21,7 @@ export default function PanelJST() {
     <main className="max-w-6xl mx-auto px-6 py-10">
       <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
         <div>
-          <h1 className="font-display font-extrabold text-4xl tracking-tight mb-1">Panel gminy</h1>
+          <h1 className="font-display font-extrabold text-4xl tracking-tight mb-1">Panel</h1>
           <p className="text-muted text-lg">Zgłaszaj wyzwania, sprawdzaj, czego potrzebują mieszkańcy, i wdrażaj sprawdzone innowacje.</p>
         </div>
         <label className="flex flex-col gap-1 font-bold text-[15px]">

@@ -90,7 +90,7 @@ function Edytor({ w, edycja }) {
     try {
       const nowy = await zapytaj('POST', sciezka, { ...cialo(), ...dodatkowo })
       zapiszPlanWdrozenia(w.id, { ograniczenia, communeId: communeId || null, plan: nowy, polecenie: dodatkowo.instruction })
-      setKomunikat(dodatkowo.instruction ? 'Plan poprawiony i zapisany.' : 'Plan gotowy i zapisany w Panelu gminy.')
+      setKomunikat(dodatkowo.instruction ? 'Plan poprawiony i zapisany.' : 'Plan gotowy i zapisany w Panelu.')
       setPolecenie('')
     } catch (e) {
       setBlad(e.message)
@@ -101,7 +101,7 @@ function Edytor({ w, edycja }) {
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-10">
-      <nav aria-label="Ścieżka" className="text-[15px] mb-4 print:hidden"><Link to="/panel">{edycja ? 'Panel gminy' : 'Panel'}</Link> <span className="text-muted">› Wdrożenie</span></nav>
+      <nav aria-label="Ścieżka" className="text-[15px] mb-4 print:hidden"><Link to="/panel">Panel</Link> <span className="text-muted">› Wdrożenie</span></nav>
       <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
         <div className="max-w-3xl">
           <p className="font-bold text-clay mb-1">Middleman Innowacji · {w.zasob.typ === 'biblioteka' ? 'innowacja z Biblioteki ROPS' : 'pomysł mieszkańców'}</p>
