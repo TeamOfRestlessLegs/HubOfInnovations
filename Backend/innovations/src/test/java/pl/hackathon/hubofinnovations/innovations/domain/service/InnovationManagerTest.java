@@ -5,13 +5,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import pl.hackathon.hubofinnovations.innovations.domain.model.Category;
 import pl.hackathon.hubofinnovations.innovations.domain.model.Innovation;
 import pl.hackathon.hubofinnovations.innovations.domain.port.in.dto.InnovationSummaryDto;
+import pl.hackathon.hubofinnovations.innovations.domain.port.in.dto.TestResultDto;
 import pl.hackathon.hubofinnovations.innovations.domain.port.in.dto.UpsertCategoryCommand;
 import pl.hackathon.hubofinnovations.innovations.domain.port.out.CategoryRepository;
 import pl.hackathon.hubofinnovations.innovations.domain.port.out.InnovationRepository;
+import pl.hackathon.hubofinnovations.innovations.domain.port.out.InnovationTesterRepository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -29,6 +32,9 @@ class InnovationManagerTest {
 
     @Mock
     private InnovationRepository innovationRepository;
+
+    @Mock
+    private InnovationTesterRepository testerRepository;
 
     @InjectMocks
     private InnovationManager innovationManager;
@@ -77,5 +83,93 @@ class InnovationManagerTest {
         assertEquals(2, results.size());
         assertEquals("cat/inn2", results.get(0).id());
         assertEquals("cat/inn1", results.get(1).id());
+    }
+
+    @Test
+    void shouldJoinAsTesterSuccessfully() {
+        // given
+        String categorySlug = "edukacja";
+        String slug = "aplikacja-szkolna";
+        String id = categorySlug + "/" + slug;
+
+        Innovation innovation = new Innovation(id, null, slug, "Tytuł", "Opis", "MD", "URL", null, null, OffsetDateTime.now(), "hash", List.of());
+        when(innovationRepository.findById(id)).thenReturn(Optional.of(innovation));
+        when(testerRepository.exists(id)).thenReturn(false);
+
+        // when
+        innovationManager.joinAsTester(categorySlug, slug);
+
+        // then
+        verify(testerRepository, times(1)).saveTester(id);
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenJoiningNonexistentInnovation() {
+        // given
+        String categorySlug = "edukacja";
+        String slug = "nie-istnieje";
+        String id = categorySlug + "/" + slug;
+
+        when(innovationRepository.findById(id)).thenReturn(Optional.empty());
+
+        // when & then
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> innovationManager.joinAsTester(categorySlug, slug));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        verify(testerRepository, never()).saveTester(anyString());
+    }
+
+    @Test
+    void shouldThrowConflictWhenAlreadyTester() {
+        // given
+        String categorySlug = "edukacja";
+        String slug = "aplikacja-szkolna";
+        String id = categorySlug + "/" + slug;
+
+        Innovation innovation = new Innovation(id, null, slug, "Tytuł", "Opis", "MD", "URL", null, null, OffsetDateTime.now(), "hash", List.of());
+        when(innovationRepository.findById(id)).thenReturn(Optional.of(innovation));
+        when(testerRepository.exists(id)).thenReturn(true);
+
+        // when & then
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> innovationManager.joinAsTester(categorySlug, slug));
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        verify(testerRepository, never()).saveTester(anyString());
+    }
+
+    @Test
+    void shouldRunTestsSuccessfullyWhenUserIsTester() {
+        // given
+        String categorySlug = "edukacja";
+        String slug = "aplikacja-szkolna";
+        String id = categorySlug + "/" + slug;
+
+        when(testerRepository.exists(id)).thenReturn(true);
+
+        // when
+        TestResultDto result = innovationManager.runTests(categorySlug, slug);
+
+        // then
+        assertNotNull(result);
+        assertEquals("SUCCESS", result.status());
+        assertEquals(id, result.innovationId());
+    }
+
+    @Test
+    void shouldThrowForbiddenWhenRunningTestsAndNotTester() {
+        // given
+        String categorySlug = "edukacja";
+        String slug = "aplikacja-szkolna";
+        String id = categorySlug + "/" + slug;
+
+        when(testerRepository.exists(id)).thenReturn(false);
+
+        // when & then
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> innovationManager.runTests(categorySlug, slug));
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     }
 }

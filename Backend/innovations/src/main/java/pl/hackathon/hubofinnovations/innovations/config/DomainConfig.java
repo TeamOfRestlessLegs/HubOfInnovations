@@ -8,6 +8,7 @@ import pl.hackathon.hubofinnovations.innovations.domain.port.in.IdeaUseCase;
 import pl.hackathon.hubofinnovations.innovations.domain.port.in.InnovationUseCase;
 import pl.hackathon.hubofinnovations.innovations.domain.port.out.CategoryRepository;
 import pl.hackathon.hubofinnovations.innovations.domain.port.out.InnovationRepository;
+import pl.hackathon.hubofinnovations.innovations.domain.port.out.InnovationTesterRepository;
 import pl.hackathon.hubofinnovations.innovations.domain.service.IdeaInteractionManager;
 import pl.hackathon.hubofinnovations.innovations.domain.service.IdeaManager;
 import pl.hackathon.hubofinnovations.innovations.domain.service.InnovationManager;
@@ -16,8 +17,11 @@ import pl.hackathon.hubofinnovations.innovations.domain.service.InnovationManage
 public class DomainConfig {
 
     @Bean
-    public InnovationUseCase innovationUseCase(CategoryRepository categoryRepository, InnovationRepository innovationRepository) {
-        return new InnovationManager(categoryRepository, innovationRepository);
+    public InnovationUseCase innovationUseCase(
+            CategoryRepository categoryRepository,
+            InnovationRepository innovationRepository,
+            InnovationTesterRepository testerRepository) {
+        return new InnovationManager(categoryRepository, innovationRepository, testerRepository);
     }
 
     @Bean

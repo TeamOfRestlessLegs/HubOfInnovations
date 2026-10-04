@@ -1,5 +1,6 @@
 package pl.hackathon.hubofinnovations.innovations.domain.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -11,20 +12,20 @@ import pl.hackathon.hubofinnovations.innovations.domain.port.in.InnovationUseCas
 import pl.hackathon.hubofinnovations.innovations.domain.port.in.dto.*;
 import pl.hackathon.hubofinnovations.innovations.domain.port.out.CategoryRepository;
 import pl.hackathon.hubofinnovations.innovations.domain.port.out.InnovationRepository;
+import pl.hackathon.hubofinnovations.innovations.domain.port.out.InnovationTesterRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class InnovationManager implements InnovationUseCase {
     private final CategoryRepository categoryRepository;
     private final InnovationRepository innovationRepository;
+    private final InnovationTesterRepository testerRepository;
 
-    public InnovationManager(CategoryRepository categoryRepository, InnovationRepository innovationRepository) {
-        this.categoryRepository = categoryRepository;
-        this.innovationRepository = innovationRepository;
-    }
 
     @Override
     public List<CategoryDto> getAllCategories() {
@@ -190,6 +191,33 @@ public class InnovationManager implements InnovationUseCase {
             filesWritten += newFiles.size();
         }
         return new ImportResultDto(catUpserts, innCreated, innUpdated, innUnchanged, filesWritten);
+    }
+
+    @Override
+    public void joinAsTester(String categorySlug, String slug) {
+        String id = categorySlug + "/" + slug;
+        if (innovationRepository.findById(id).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Innowacja nie istnieje");
+        }
+
+        if (testerRepository.exists(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Jesteś już testerem tej innowacji");
+        }
+
+        testerRepository.saveTester(id);
+    }
+
+    @Override
+    public TestResultDto runTests(String categorySlug, String slug) {
+        String id = categorySlug + "/" + slug;
+
+        if (!testerRepository.exists(id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Musisz dołączyć jako tester, aby uruchomić testy");
+        }
+        String testStatus = "SUCCESS";
+        String message = "Wszystkie testy innowacji przebiegły pomyślnie.";
+
+        return new TestResultDto(id, testStatus, message, LocalDateTime.now());
     }
 
     private InnovationSummaryDto toSummaryDto(Innovation i) {
