@@ -35,7 +35,7 @@ async def _innovation(req: PlanRequest, store: VectorStore) -> tuple[str, list[d
     detail = await store.detail(req.source.id)   # InnovationNotFound → 404 w trasie
     c = req.constraints
     query = f"{detail['title']} – jak wdrożyć w gminie: {c.target_group} {c.resources} koszty, organizacja, zespół"
-    fragments = await store.context(req.source.id, query, FRAGMENTS)
+    fragments = await store.query_context(req.source.id, query, FRAGMENTS)
     text = f"Innowacja z Biblioteki ROPS: {detail['title']} ({detail['category']})\n{detail['description']}"
     return text, fragments
 

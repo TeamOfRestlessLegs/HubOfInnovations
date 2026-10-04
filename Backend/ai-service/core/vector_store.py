@@ -124,11 +124,63 @@ class VectorStore:
         return {**self._summary(innovation_id), "description": self._description(innovation_id),
                 "materials": list(materials.values())}
 
-    async def context(self, innovation_id: str, query: str, limit: int = 6) -> list[dict]:
+    async def query_context(self, innovation_id: str, query: str, limit: int = 6) -> list[dict]:
         """Fragmenty opisu i materiałów innowacji najbliższe zapytaniu – kontekst dla Middlemana."""
         if innovation_id not in self._profile_meta:
             raise InnovationNotFound(innovation_id)
         return await self._fragments(innovation_id, await self.embed(query), limit)
+
+    # ------------------------------------------------------------------ dla analiz (core/analyzer.py)
+
+    def innovation_ids(self) -> list[str]:
+        return list(self._profile_ids)
+
+    def has_keyword_match(self, query: str) -> bool:
+        """Czy którekolwiek słowo zapytania występuje w profilach innowacji (BM25)."""
+        return bool(self._bm25.scores(query))
+
+    def innovation_meta(self, innovation_id: str) -> dict:
+        meta = self._profile_meta[innovation_id]
+        return {"title": meta["tytul"], "category": meta["kategoria"]}
+
+    def find_by_title(self, name: str) -> list[str]:
+        """Innowacje, których tytuł (albo slug) pasuje do nazwy: najpierw dokładnie, potem przez zawieranie."""
+        wanted = _normalize(name)
+        exact = [i for i, m in self._profile_meta.items()
+                 if _normalize(m["tytul"]) == wanted or i.split("/", 1)[1] == name.strip().lower()]
+        if exact:
+            return exact
+        return [i for i, m in self._profile_meta.items() if wanted and wanted in _normalize(m["tytul"])]
+
+    async def profile(self, innovation_id: str) -> dict:
+        result = await asyncio.to_thread(self._profiles.get, ids=[innovation_id], include=["documents"])
+        if len(result["ids"]) == 0:
+            raise InnovationNotFound(innovation_id)
+        meta = self._profile_meta[innovation_id]
+        return {"id": innovation_id, "title": meta["tytul"], "category": meta["kategoria"],
+                "url": meta["url"], "text": result["documents"][0]}
+
+    async def embed_many(self, texts: list[str]) -> list[list[float]]:
+        response = await self._openai.embeddings.create(model=self._model, input=texts)
+        return [d.embedding for d in sorted(response.data, key=lambda d: d.index)]
+
+    async def context(self, innovation_id: str, query_embeddings: list[list[float]], per_query: int) -> list[dict]:
+        """Fragmenty jednej innowacji najlepiej pasujące do każdego z zapytań (bez duplikatów, w kolejności zapytań)."""
+        results = await asyncio.gather(*(
+            asyncio.to_thread(self._chunks.query, query_embeddings=[embedding], n_results=per_query,
+                              where={"innowacja_id": innovation_id}, include=["documents", "metadatas"])
+            for embedding in query_embeddings
+        ))
+        fragments: dict[str, dict] = {}
+        for result in results:
+            for chunk_id, doc, meta in zip(result["ids"][0], result["documents"][0], result["metadatas"][0]):
+                fragments.setdefault(chunk_id, {
+                    "text": doc.split("\n\n", 1)[-1],
+                    "kind": meta["zrodlo"],
+                    "file": meta["plik_nazwa"],
+                    "page": meta["strona"] or None,
+                })
+        return list(fragments.values())
 
     # ------------------------------------------------------------------ wewnętrzne
 
@@ -200,3 +252,7 @@ class VectorStore:
             }
             for doc, meta, dist in zip(result["documents"][0], result["metadatas"][0], result["distances"][0])
         ]
+
+
+def _normalize(text: str) -> str:
+    return re.sub(r"[^\w]+", " ", text.lower()).strip()

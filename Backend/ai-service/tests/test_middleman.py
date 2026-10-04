@@ -58,7 +58,7 @@ class AtrapaBiblioteki:
             raise InnovationNotFound(innovation_id)
         return {**self.meta[innovation_id], "description": "Wolontariusze dowożą seniorów."}
 
-    async def context(self, innovation_id, query, limit=6):
+    async def query_context(self, innovation_id, query, limit=6):
         return [{"text": "Koszt paliwa ok. 250 zł miesięcznie na samochód.", "file": "model.pdf", "page": 3, "source": "pdf", "score": 0.9}]
 
     def browse(self, category, query, limit, offset):
