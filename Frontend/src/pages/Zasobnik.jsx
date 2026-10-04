@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useDane } from '../data/DaneContext.jsx'
 import { OBSZARY, ZRODLO_MAPY } from '../data/obszary.js'
 import { materialy } from '../data/zasobnik.js'
 import KartaBiblioteki from '../components/KartaBiblioteki.jsx'
+import { aiDostepne, BRAK_AI, zapytaj, zBibliotekiROPS } from '../data/ai.js'
 
 const ZAKLADKI = [
   { id: 'wyzwania', nazwa: 'Wyzwania Małopolski' },
@@ -39,7 +40,7 @@ export default function Zasobnik() {
       </div>
 
       {zakladka === 'wyzwania' && <Wyzwania />}
-      {zakladka === 'biblioteka' && <Biblioteka start={params.get('obszar') || ''} />}
+      {zakladka === 'biblioteka' && <BibliotekaROPS />}
       {zakladka === 'materialy' && <Materialy />}
     </main>
   )
@@ -86,6 +87,88 @@ function Wyzwania() {
           )
         })}
       </ul>
+    </section>
+  )
+}
+
+const NA_STRONE = 24
+
+// Biblioteka Innowacji ROPS z serwisu AI (GET /innovations): ~200 innowacji z opisami i materiałami.
+// Bez serwisu – komunikat i przykładowe wpisy demonstracyjne.
+function BibliotekaROPS() {
+  const [kategorie, setKategorie] = useState([])
+  const [kategoria, setKategoria] = useState('')
+  const [szukaj, setSzukaj] = useState('')
+  const [zapytanie, setZapytanie] = useState('')
+  const [wynik, setWynik] = useState({ total: 0, results: [] })
+  const [stan, setStan] = useState('laduje')   // laduje | gotowe | blad
+  const [blad, setBlad] = useState('')
+
+  useEffect(() => {
+    if (aiDostepne) zapytaj('GET', '/innovations/categories').then(setKategorie, () => {})
+  }, [])
+
+  // Nowe wyszukiwanie / kategoria = lista od początku
+  useEffect(() => {
+    if (!aiDostepne) return
+    const params = new URLSearchParams({ limit: NA_STRONE, offset: 0 })
+    if (kategoria) params.set('category', kategoria)
+    if (zapytanie.length >= 2) params.set('q', zapytanie)
+    setStan('laduje')
+    zapytaj('GET', '/innovations?' + params).then(
+      (w) => { setWynik(w); setStan('gotowe') },
+      (e) => { setBlad(e.message); setStan('blad') },
+    )
+  }, [kategoria, zapytanie])
+
+  const wiecej = () => {
+    const params = new URLSearchParams({ limit: NA_STRONE, offset: wynik.results.length })
+    if (kategoria) params.set('category', kategoria)
+    if (zapytanie.length >= 2) params.set('q', zapytanie)
+    zapytaj('GET', '/innovations?' + params).then((w) => setWynik((s) => ({ ...w, results: [...s.results, ...w.results] })), (e) => setBlad(e.message))
+  }
+
+  if (!aiDostepne) {
+    return (
+      <>
+        <p role="status" className="mb-6 px-4 py-3 rounded-xl bg-clay-light text-clay-dark font-bold max-w-3xl">
+          Pełna Biblioteka Innowacji ROPS jest dostępna po podłączeniu serwisu AI. {BRAK_AI} Poniżej – przykładowe wpisy demonstracyjne.
+        </p>
+        <Biblioteka />
+      </>
+    )
+  }
+
+  return (
+    <section>
+      <form onSubmit={(e) => { e.preventDefault(); setZapytanie(szukaj.trim()) }} role="search" className="flex flex-wrap gap-2 mb-4 max-w-3xl">
+        <label htmlFor="szukaj-bib" className="sr-only">Szukaj w Bibliotece</label>
+        <input id="szukaj-bib" type="search" value={szukaj} onChange={(e) => setSzukaj(e.target.value)} placeholder="Np. seniorzy, transport, opieka wytchnieniowa"
+          className="flex-[1_1_280px] min-h-12 px-4 rounded-xl border-2 border-line bg-white" />
+        <button type="submit" className="min-h-12 px-5 rounded-xl bg-ink text-white font-bold">Szukaj</button>
+        {zapytanie && <button type="button" onClick={() => { setSzukaj(''); setZapytanie('') }} className="min-h-12 px-4 rounded-xl border-2 border-line font-bold">Wyczyść</button>}
+      </form>
+      {kategorie.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6" role="group" aria-label="Filtruj po kategorii">
+          <Filtr aktywny={!kategoria} onClick={() => setKategoria('')}>Wszystkie</Filtr>
+          {kategorie.map((k) => (
+            <Filtr key={k.slug} aktywny={kategoria === k.slug} onClick={() => setKategoria(k.slug)}>{k.name} ({k.count})</Filtr>
+          ))}
+        </div>
+      )}
+      <div aria-live="polite">
+        {stan === 'laduje' && <p className="text-muted">Wczytywanie Biblioteki…</p>}
+        {stan === 'blad' && <p role="alert" className="font-bold text-[#9B1C1C]">{blad}</p>}
+        {stan === 'gotowe' && <p className="text-muted mb-4">{wynik.total ? `Innowacji: ${wynik.total}` : 'Nic nie znaleziono – spróbuj innych słów.'}</p>}
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-4">
+        {wynik.results.map((i) => <KartaBiblioteki key={i.id} innowacja={zBibliotekiROPS(i)} />)}
+      </div>
+      {stan === 'gotowe' && wynik.results.length < wynik.total && (
+        <button type="button" onClick={wiecej} className="mt-6 min-h-12 px-6 rounded-xl border-2 border-ink font-bold">
+          Pokaż więcej ({wynik.total - wynik.results.length})
+        </button>
+      )}
     </section>
   )
 }

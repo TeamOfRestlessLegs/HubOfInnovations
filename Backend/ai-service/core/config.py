@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     analysis_db_path: Path = SERVICE_DIR / "data" / "analyses.sqlite"  # ANALYSIS_DB_PATH — cache analiz
     idea_embeddings_path: Path = SERVICE_DIR / "data" / "idea_embeddings.sqlite"  # IDEA_EMBEDDINGS_PATH
     observer_db_path: Path | None = None  # OBSERVER_DB_PATH — domyślnie Dane/data/obserwator.sqlite
+    middleman_model: str = "gpt-4o-mini"  # MIDDLEMAN_MODEL — model OpenAI piszący plany wdrożenia
+    assistant_model: str = "gpt-4o-mini"  # ASSISTANT_MODEL — model OpenAI asystenta wniosku
 
 
 @lru_cache

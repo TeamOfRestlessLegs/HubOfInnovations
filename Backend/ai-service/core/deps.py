@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
+from openai import AsyncOpenAI
 
 from core.analyzer import InnovationAnalyzer
 from core.idea_analyzer import IdeaAnalyzer
@@ -34,6 +35,21 @@ def get_innovations(request: Request) -> InnovationsClient:
 Innovations = Annotated[InnovationsClient, Depends(get_innovations)]
 
 
+def get_observer_optional(request: Request) -> ObserverStore | None:
+    """Obserwator, jeśli działa – dla funkcji, które bez danych gminy też dają wynik (np. Middleman)."""
+    return getattr(request.app.state, "observer", None)
+
+
+OptionalObserver = Annotated[ObserverStore | None, Depends(get_observer_optional)]
+
+
+def get_openai(request: Request) -> AsyncOpenAI:
+    return request.app.state.openai
+
+
+OpenAIClient = Annotated[AsyncOpenAI, Depends(get_openai)]
+
+
 def get_analyzer(request: Request) -> InnovationAnalyzer:
     return request.app.state.analyzer
 
@@ -53,3 +69,9 @@ def get_idea_analyzer(request: Request) -> IdeaAnalyzer:
 
 
 IdeaAnalyzerDep = Annotated[IdeaAnalyzer, Depends(get_idea_analyzer)]
+def get_analyzer_optional(request: Request) -> InnovationAnalyzer | None:
+    """Analizator, jeśli jest – Middleman bez niego też układa plan (tylko bez doświadczeń z podobnych wdrożeń)."""
+    return getattr(request.app.state, "analyzer", None)
+
+
+OptionalAnalyzer = Annotated[InnovationAnalyzer | None, Depends(get_analyzer_optional)]

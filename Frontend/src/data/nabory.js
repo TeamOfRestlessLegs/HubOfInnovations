@@ -1,12 +1,14 @@
 // Nabory grantowe i szablon wniosku.
 // ROPS tworzy nabór w panelu; użytkownik generuje z fiszki wniosek dopasowany do naboru.
 
-import { INTENSYWNOSC, SKALA, CZESTOTLIWOSC, znajdz } from './fiszka.js'
 import { ETAPY } from './etapy.js'
 import { obszarPoId } from './obszary.js'
+import { DANE_FISZKI, odpowiedzCanvy, pytanieCanvy } from './asystent.js'
+import wzorInkubator from './wzory/inkubator.json'
+import wzorUsluga from './wzory/usluga.json'
 
 // Domyślny szablon pól wniosku. `zrodlo` mówi, z czego wypełnić pole na start.
-// Docelowo ROPS może zmienić pola i limity dla każdego naboru.
+// Gdy ROPS wgra wzór wniosku (PDF), pola i pytania naboru odczytuje z niego asystent (data/asystent.js → odczytajWzor).
 export const DOMYSLNE_POLA = [
   { id: 'problem', etykieta: 'Opis problemu społecznego', limit: 1500, zrodlo: 'problem' },
   { id: 'odbiorcy', etykieta: 'Grupa docelowa i skala problemu', limit: 800, zrodlo: 'odbiorcy' },
@@ -19,18 +21,14 @@ export const DOMYSLNE_POLA = [
 // Wypełnia pole wniosku danymi z fiszki i Canvy (bez AI – AI może potem przeredagować)
 export function wypelnijZFiszki(zrodlo, f, canva = {}) {
   const lista = (x) => (x || []).join(', ')
-  const obszar = obszarPoId(f.obszar)
   switch (zrodlo) {
     case 'problem':
       return [
         /[.!?]$/.test(f.problem.trim()) ? f.problem.trim() : f.problem.trim() + '.',
-        (f.powiat || obszar) && `Problem ${f.powiat ? `występuje w pow. ${f.powiat}` : 'występuje w Małopolsce'}${obszar ? ` i dotyczy obszaru „${obszar.nazwa}”` : ''}.`,
-        f.intensywnosc && `Ocena mieszkańców: ${znajdz(INTENSYWNOSC, f.intensywnosc)?.nazwa.toLowerCase()}, występuje ${znajdz(CZESTOTLIWOSC, f.czestotliwosc)?.nazwa.toLowerCase() || '—'}.`,
       ].filter(Boolean).join(' ')
     case 'odbiorcy': {
       const grupy = [...(f.grupy || []), f.grupaInna].filter(Boolean).join(', ')
-      const skala = znajdz(SKALA, f.skala)
-      return `Odbiorcy: ${grupy}.${skala ? ` Skala: ${skala.nazwa.toLowerCase()} (${skala.opis}).` : ''}`
+      return `Odbiorcy: ${grupy}.`
     }
     case 'rozwiazanie':
       return [`${f.tytul}. ${f.opis}`, f.istota && `Nowość: ${f.istota}`].filter(Boolean).join(' ')
@@ -38,7 +36,6 @@ export function wypelnijZFiszki(zrodlo, f, canva = {}) {
       return `Obecny etap: ${ETAPY.find((e) => e.nr === f.etap)?.nazwa || '—'}. Pomysł ma ${(f.poparcia || 0) + (f.poparli?.length || 0)} poparć mieszkańców na platformie Małopolski Splot.`
     case 'zasoby':
       return [
-        f.szuka && `Potrzebujemy: ${f.szuka}.`,
         canva.stale?.length && `Koszty stałe: ${lista(canva.stale)}.`,
         canva.zmienne?.length && `Koszty zmienne: ${lista(canva.zmienne)}.`,
         canva.taniej && `Partnerzy obniżający koszty: ${canva.taniej}`,
@@ -58,6 +55,23 @@ export function wypelnijZFiszki(zrodlo, f, canva = {}) {
   }
 }
 
+// Pole na start: szablon domyślny ma `zrodlo`, pola odczytane ze wzoru – powiązania z fiszką, Canvą
+// i odpowiedziami na pytania naboru. Skleja to, co już wiemy; asystent AI może potem przeredagować.
+export function wypelnijPole(p, f, canva = {}, nabor, odpowiedzi = {}) {
+  if (p.zrodlo) return wypelnijZFiszki(p.zrodlo, f, canva)
+  const zdanie = (t) => (/[.!?]$/.test(t) ? t : t + '.')
+  return [
+    // krótkie dane (grupy, powiat, etap) z etykietą, dłuższe opisy fiszki – wprost
+    ...(p.fiszka || []).filter((k) => DANE_FISZKI[k]?.z(f)).map((k) => zdanie(['problem', 'opis', 'istota', 'szuka'].includes(k)
+      ? String(DANE_FISZKI[k].z(f)).trim() : `${DANE_FISZKI[k].nazwa}: ${DANE_FISZKI[k].z(f)}`)),
+    ...(p.canva || []).map((id) => odpowiedzCanvy(id, canva) && `${pytanieCanvy(id).tytul}: ${odpowiedzCanvy(id, canva)}`).filter(Boolean).map(zdanie),
+    ...(p.pytania || []).map((id) => (odpowiedzi[id] || '').trim()).filter(Boolean).map(zdanie),
+  ].join(' ')
+}
+
+// Pytania naboru, na które autor jeszcze nie odpowiedział
+export const bezOdpowiedzi = (nabor, odpowiedzi = {}) => (nabor?.pytania || []).filter((q) => !(odpowiedzi[q.id] || '').trim())
+
 // Czy nabór jest teraz otwarty
 export const naborOtwarty = (n) => n.status === 'otwarty' && new Date(n.termin) >= new Date(new Date().toDateString())
 
@@ -65,15 +79,32 @@ const NAZWY_WPLYWU = { maly: 'mały', mozliwy: 'możliwy', wyrazny: 'wyraźny', 
 
 const zaDni = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10)
 
+// Przykładowe nabory z prawdziwymi wzorami wniosków ROPS (Frontend/public/wzory, źródło: data/wnioski).
+// Pola, pytania i układ stron odczytał asystent (POST /asystent/wzor) i sprawdził człowiek – tak jak robi to ROPS
+// przy ogłaszaniu naboru. `wersja` – po zmianie przykładu zapisane w przeglądarce kopie się odświeżą.
 export const naboryStartowe = [
   {
     id: 'n1',
-    nazwa: '[Przykład] Inkubator innowacji – aktywni seniorzy',
-    opis: 'Granty na przetestowanie w mikroskali rozwiązań przeciwdziałających samotności i wykluczeniu seniorów.',
-    kryteria: 'Rozwiązanie odpowiada na wyzwanie z Mapy Wyzwań; ma jasno opisaną grupę docelową; da się je przetestować w ciągu 6 miesięcy.',
-    obszary: ['seniorzy', 'zdrowie'],
+    wersja: 3,
+    nazwa: '[Przykład] Inkubator Włączenia Społecznego 2.0 – pomysły na innowacje społeczne',
+    opis: 'Granty na przygotowanie i przetestowanie pomysłów przeciwdziałających wykluczeniu społecznemu (do 3 miesięcy przygotowania i 9 miesięcy testu).',
+    kryteria: 'Innowacja odpowiada na problem wykluczenia społecznego; jest nowa (nie powiela istniejących rozwiązań); ma realny plan przygotowania i testu z kosztami.',
+    obszary: ['seniorzy', 'psychika', 'niepelnosprawnosc', 'rodzina'],
     termin: zaDni(21),
     status: 'otwarty',
-    pola: DOMYSLNE_POLA,
+    wzor: { nazwa: 'Formularz aplikacyjny – Inkubator Włączenia Społecznego 2.0.pdf', url: '/wzory/inkubator-formularz-aplikacyjny.pdf' },
+    ...wzorInkubator,
+  },
+  {
+    id: 'n2',
+    wersja: 2,
+    nazwa: '[Przykład] Usługa Wrażliwa – pilotażowe wdrożenie usług społecznych',
+    opis: 'Granty dla gmin i organizacji na wdrożenie w społeczności lokalnej usługi opartej na jednej z innowacji ROPS (do 18 miesięcy).',
+    kryteria: 'Usługa wdraża wybraną innowację ROPS; jasna grupa docelowa i diagnoza; plan działań i kosztów; trwałość efektów; zgodność z zasadą deinstytucjonalizacji.',
+    obszary: ['seniorzy', 'zdrowie', 'niepelnosprawnosc', 'rodzina'],
+    termin: zaDni(35),
+    status: 'otwarty',
+    wzor: { nazwa: 'Wniosek o grant – Usługa Wrażliwa.pdf', url: '/wzory/usluga-wrazliwa-wniosek-o-grant.pdf' },
+    ...wzorUsluga,
   },
 ]

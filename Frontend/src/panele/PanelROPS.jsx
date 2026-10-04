@@ -1,44 +1,31 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDane } from '../data/DaneContext.jsx'
-import { STATUS_TESTU, tenSamZasob } from '../data/tester.js'
-import { RaportOpinii } from '../components/RaportOpinii.jsx'
 import UsunFiszke from '../components/UsunFiszke.jsx'
 import DecyzjaZarzadu from '../components/DecyzjaZarzadu.jsx'
 import { ETAPY } from '../data/etapy.js'
-import { OBSZARY, obszarPoId } from '../data/obszary.js'
 import { DOMYSLNE_POLA, naborOtwarty } from '../data/nabory.js'
 import StatusWpisu, { STATUSY } from '../components/StatusWpisu.jsx'
 import SzczegolyFiszki from '../components/SzczegolyFiszki.jsx'
 import { policz } from '../data/policz.js'
-import { SEKCJE } from '../data/canva.js'
 import { liczbaPoparc } from '../data/watekFiszki.js'
 import { wczytajPdf } from '../data/plik.js'
 import WzorWniosku from '../components/WzorWniosku.jsx'
-
-// Odpowiedź z Canvy jako tekst (wybór → nazwa opcji, lista → po przecinku)
-const tekstOdpowiedzi = (p, v) => {
-  if (!v || (Array.isArray(v) && !v.length)) return '—'
-  if (p.typ === 'wybor') return p.opcje.find((o) => o.id === v)?.nazwa || v
-  if (Array.isArray(v)) return v.join(', ')
-  return v
-}
+import WniosekPdf from '../components/WniosekPdf.jsx'
+import PolaZWzoru from '../components/PolaZWzoru.jsx'
 
 const ZAKLADKI = [
   { id: 'kolejka', nazwa: 'Kolejka' },
   { id: 'fiszki', nazwa: 'Fiszki' },
-  { id: 'biblioteka', nazwa: 'Biblioteka' },
   { id: 'nabory', nazwa: 'Nabory' },
-  { id: 'tester', nazwa: 'Tester' },
   { id: 'trendy', nazwa: 'Trendy potrzeb' },
 ]
 
-// Panel ROPS (administrator): weryfikacja, Biblioteka, nabory, trendy potrzeb
+// Panel ROPS (administrator): weryfikacja, fiszki, nabory, trendy potrzeb
 export default function PanelROPS() {
   const [zakladka, setZakladka] = useState('kolejka')
-  const { fiszki, zgloszenia, wnioski, zgloszeniaTestow, pytania, resetujDemo } = useDane()
+  const { fiszki, zgloszenia, wnioski, pytania, resetujDemo } = useDane()
   const pytaniaROPS = pytania.filter((q) => q.do === 'rops' && q.odpowiedzi.length === 0)
-  const chetni = zgloszeniaTestow.filter((z) => z.status === 'zgloszony').length
 
   const doWeryfikacji = fiszki.filter((i) => i.status === 'do_weryfikacji')
   const prosby = fiszki.filter((i) => i.prosbaOEtap && i.status === 'opublikowana')
@@ -50,7 +37,6 @@ export default function PanelROPS() {
     { nazwa: 'Prośby o wyższy etap', liczba: prosby.length, pilne: prosby.length > 0 },
     { nazwa: 'Pytania w wątkach', liczba: pytaniaROPS.length, pilne: pytaniaROPS.length > 0 },
     { nazwa: 'Wnioski do oceny', liczba: zlozone.length, pilne: zlozone.length > 0 },
-    { nazwa: 'Chętni do testów', liczba: chetni, pilne: chetni > 0 },
     { nazwa: 'Zapytania i wyzwania gmin', liczba: zgloszenia.length },
   ]
 
@@ -59,7 +45,7 @@ export default function PanelROPS() {
       <div className="flex flex-wrap justify-between items-end gap-4 mb-6">
         <div>
           <h1 className="font-display font-extrabold text-4xl tracking-tight mb-1">Panel ROPS</h1>
-          <p className="text-muted text-lg">Weryfikacja zgłoszeń, Biblioteka Innowacji, nabory i potrzeby regionu.</p>
+          <p className="text-muted text-lg">Weryfikacja zgłoszeń, fiszki, nabory i potrzeby regionu.</p>
         </div>
         <button onClick={resetujDemo} className="min-h-10 px-3 rounded-lg border border-line text-sm font-bold text-muted hover:bg-white">
           Przywróć dane przykładowe
@@ -86,16 +72,13 @@ export default function PanelROPS() {
             {z.nazwa}
             {z.id === 'kolejka' && doZrobienia > 0 && <span className="ml-2 px-2 rounded-full bg-clay text-white text-sm">{doZrobienia}</span>}
             {z.id === 'nabory' && zlozone.length > 0 && <span className="ml-2 px-2 rounded-full bg-clay text-white text-sm">{zlozone.length}</span>}
-            {z.id === 'tester' && chetni > 0 && <span className="ml-2 px-2 rounded-full bg-clay text-white text-sm">{chetni}</span>}
           </button>
         ))}
       </div>
 
       {zakladka === 'kolejka' && <Kolejka doWeryfikacji={doWeryfikacji} prosby={prosby} pytania={pytaniaROPS} />}
       {zakladka === 'fiszki' && <TabelaFiszek />}
-      {zakladka === 'biblioteka' && <Biblioteka />}
       {zakladka === 'nabory' && <Nabory />}
-      {zakladka === 'tester' && <TesterROPS />}
       {zakladka === 'trendy' && <Trendy />}
     </main>
   )
@@ -236,75 +219,6 @@ function TabelaFiszek() {
   )
 }
 
-// ── Biblioteka: szybkie dodawanie innowacji ROPS ───────────
-function Biblioteka() {
-  const { biblioteka, dodajDoBiblioteki, usunZBiblioteki } = useDane()
-  const puste = { tytul: '', opis: '', obszary: [], url: '', wideo: '', miejsce: '', zalaczniki: '' }
-  const [nowa, setNowa] = useState(puste)
-  const [dodano, setDodano] = useState(false)
-  const ustaw = (k, v) => { setNowa({ ...nowa, [k]: v }); setDodano(false) }
-  const przelaczObszar = (id) => ustaw('obszary', nowa.obszary.includes(id) ? nowa.obszary.filter((x) => x !== id) : [...nowa.obszary, id])
-
-  function dodaj(e) {
-    e.preventDefault()
-    dodajDoBiblioteki({
-      ...nowa,
-      // załączniki: każda linia „nazwa | adres”
-      zalaczniki: nowa.zalaczniki.split('\n').map((l) => l.split('|').map((x) => x.trim())).filter(([n]) => n).map(([nazwa, url]) => ({ nazwa, url: url || '#' })),
-      slowa: (nowa.tytul + ' ' + nowa.opis).toLowerCase().split(/[^a-ząćęłńóśźż]+/).filter((s) => s.length > 4),
-    })
-    setNowa(puste)
-    setDodano(true)
-  }
-
-  return (
-    <div className="flex flex-wrap gap-6 items-start">
-      <form onSubmit={dodaj} className="flex-[1_1_380px] min-w-0 bg-white border border-line rounded-2xl p-6 flex flex-col gap-3">
-        <h2 className="font-display font-bold text-2xl">Dodaj innowację</h2>
-        <p className="text-muted text-[15px] -mt-1">Od razu pojawi się w Zasobniku i w wynikach wyszukiwarki.</p>
-        <Pole etykieta="Tytuł" wartosc={nowa.tytul} onZmiana={(v) => ustaw('tytul', v)} />
-        <Pole etykieta="Krótki opis" wartosc={nowa.opis} onZmiana={(v) => ustaw('opis', v)} wiersze={3} />
-        <fieldset>
-          <legend className="font-bold mb-2">Obszary</legend>
-          <div className="flex flex-wrap gap-2">
-            {OBSZARY.map((o) => (
-              <button type="button" key={o.id} aria-pressed={nowa.obszary.includes(o.id)} onClick={() => przelaczObszar(o.id)}
-                className={'min-h-10 px-3 rounded-full text-sm font-bold border-2 ' + (nowa.obszary.includes(o.id) ? 'bg-teal-light border-teal text-teal-dark' : 'border-line')}>
-                {o.nazwa}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-        <Pole etykieta="Link „czytaj więcej”" wartosc={nowa.url} onZmiana={(v) => ustaw('url', v)} />
-        <Pole etykieta="Link do filmu (opcjonalnie)" wartosc={nowa.wideo} onZmiana={(v) => ustaw('wideo', v)} />
-        <Pole etykieta="Gdzie wdrożono" wartosc={nowa.miejsce} onZmiana={(v) => ustaw('miejsce', v)} />
-        <Pole etykieta="Załączniki – jeden w linii: nazwa | adres" wartosc={nowa.zalaczniki} onZmiana={(v) => ustaw('zalaczniki', v)} wiersze={3} />
-        <div className="flex items-center gap-3">
-          <button type="submit" disabled={!nowa.tytul.trim() || !nowa.opis.trim() || !nowa.obszary.length} className="min-h-11 px-5 rounded-lg bg-teal text-white font-bold disabled:opacity-50">
-            Dodaj do Biblioteki
-          </button>
-          {dodano && <span role="status" className="text-teal-dark font-bold">Dodano.</span>}
-        </div>
-      </form>
-
-      <section className="flex-[2_1_480px] min-w-0">
-        <h2 className="font-display font-bold text-2xl mb-4">W Bibliotece ({biblioteka.length})</h2>
-        <ul className="flex flex-col gap-2">
-          {biblioteka.map((b) => (
-            <li key={b.id} className="bg-white border border-line rounded-xl p-4 flex flex-wrap justify-between items-center gap-3">
-              <div className="min-w-0">
-                <p className="font-bold">{b.tytul}</p>
-                <p className="text-sm text-muted">{(b.obszary || []).map((o) => obszarPoId(o)?.nazwa).join(', ')} · {(b.zalaczniki || []).length} załączników</p>
-              </div>
-              <button onClick={() => usunZBiblioteki(b.id)} className="min-h-10 px-3 rounded-lg border-2 border-line font-bold text-sm">Usuń</button>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-  )
-}
-
 function Pole({ etykieta, wartosc, onZmiana, wiersze }) {
   return (
     <label className="flex flex-col gap-1 font-bold">
@@ -321,15 +235,17 @@ function Pole({ etykieta, wartosc, onZmiana, wiersze }) {
 // ── Nabory i ocena wniosków ────────────────────────────────
 function Nabory() {
   const { nabory, wnioski, dodajNabor, zamknijNabor, ocenWniosek, ustawWzorNaboru } = useDane()
-  const puste = { nazwa: '', opis: '', kryteria: '', obszary: [], termin: '', wzor: null }
+  const puste = { nazwa: '', opis: '', kryteria: '', termin: '', wzor: null }
   const [nowy, setNowy] = useState(puste)
+  const [polaNowego, setPolaNowego] = useState(null)   // { pola, pytania } ze wzoru albo null = domyślny szablon
   const [otwartyWniosek, setOtwartyWniosek] = useState(null)
   const ustaw = (k, v) => setNowy({ ...nowy, [k]: v })
 
   function dodaj(e) {
     e.preventDefault()
-    dodajNabor({ ...nowy, pola: DOMYSLNE_POLA })
+    dodajNabor({ ...nowy, ...(polaNowego ? doZapisu(polaNowego) : { pola: DOMYSLNE_POLA, pytania: [], uklad: null }) })
     setNowy(puste)
+    setPolaNowego(null)
   }
 
   return (
@@ -342,7 +258,7 @@ function Nabory() {
               <div>
                 <h2 className="font-display font-bold text-2xl">{n.nazwa}</h2>
                 <p className="text-muted text-[15px]">
-                  do {new Date(n.termin).toLocaleDateString('pl-PL')} · {n.obszary.map((o) => obszarPoId(o)?.nazwa).join(', ')} ·{' '}
+                  do {new Date(n.termin).toLocaleDateString('pl-PL')} ·{' '}
                   <strong className={naborOtwarty(n) ? 'text-teal-dark' : 'text-muted'}>{naborOtwarty(n) ? 'otwarty' : 'zamknięty'}</strong>
                 </p>
               </div>
@@ -352,6 +268,7 @@ function Nabory() {
               {n.wzor ? <WzorWniosku nabor={n} /> : <p className="text-[15px] text-clay-dark font-bold">Brak wzoru wniosku (PDF).</p>}
               <WyborPdf etykieta={n.wzor ? 'Podmień wzór' : 'Dodaj wzór wniosku (PDF)'} onWybierz={(w) => ustawWzorNaboru(n.id, w)} />
             </div>
+            <PolaNaboru n={n} maWnioski={wnioski.some((w) => w.naborId === n.id)} />
             <h3 className="font-bold mt-2">Złożone wnioski ({jegoWnioski.length})</h3>
             {jegoWnioski.length === 0 && <p className="text-muted">Jeszcze nikt nie złożył wniosku.</p>}
             <ul className="flex flex-col gap-2">
@@ -364,7 +281,7 @@ function Nabory() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button onClick={() => setOtwartyWniosek(otwartyWniosek === w.id ? null : w.id)} aria-expanded={otwartyWniosek === w.id} className="min-h-10 px-3 rounded-lg border-2 border-ink font-bold text-sm">
-                        {otwartyWniosek === w.id ? 'Zwiń' : 'Czytaj wniosek'}
+                        {otwartyWniosek === w.id ? 'Zwiń' : 'Czytaj wniosek (PDF)'}
                       </button>
                       {w.status === 'zlozony' && (
                         <>
@@ -374,31 +291,7 @@ function Nabory() {
                       )}
                     </div>
                   </div>
-                  {otwartyWniosek === w.id && (
-                    <dl className="flex flex-col gap-3 bg-white rounded-lg p-4">
-                      {n.pola.map((p) => (
-                        <div key={p.id}>
-                          <dt className="font-bold">{p.etykieta}</dt>
-                          <dd className="whitespace-pre-line text-[15px]">{w.pola?.[p.id] || '—'}</dd>
-                        </div>
-                      ))}
-                      {w.canva && (
-                        <details className="border-t border-line pt-3">
-                          <summary className="font-bold cursor-pointer min-h-11 flex items-center">Canva innowacji autora</summary>
-                          <div className="flex flex-col gap-2 mt-2">
-                            {SEKCJE.map((s) => (
-                              <div key={s.id}>
-                                <p className="font-bold text-[15px]">{s.nazwa}</p>
-                                {s.pytania.map((p) => (
-                                  <p key={p.id} className="text-[15px]"><span className="text-muted">{p.tytul}{/[?:]$/.test(p.tytul) ? "" : ":"}</span> {tekstOdpowiedzi(p, w.canva[p.id])}</p>
-                                ))}
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      )}
-                    </dl>
-                  )}
+                  {otwartyWniosek === w.id && <WniosekPdf w={w} n={n} />}
                 </li>
               ))}
             </ul>
@@ -408,22 +301,10 @@ function Nabory() {
 
       <form onSubmit={dodaj} className="bg-white border border-line rounded-2xl p-6 flex flex-col gap-3 max-w-3xl">
         <h2 className="font-display font-bold text-2xl">Ogłoś nabór</h2>
-        <p className="text-muted text-[15px] -mt-1">W Kreatorze pojawi się tryb „Wniosek do naboru”, a autorzy pasujących fiszek dostaną propozycję w panelu.</p>
+        <p className="text-muted text-[15px] -mt-1">Nabór pojawi się w wątkach opublikowanych pomysłów, a ich autorzy dostaną powiadomienie.</p>
         <Pole etykieta="Nazwa naboru" wartosc={nowy.nazwa} onZmiana={(v) => ustaw('nazwa', v)} />
         <Pole etykieta="Opis" wartosc={nowy.opis} onZmiana={(v) => ustaw('opis', v)} wiersze={2} />
         <Pole etykieta="Kryteria oceny" wartosc={nowy.kryteria} onZmiana={(v) => ustaw('kryteria', v)} wiersze={2} />
-        <fieldset>
-          <legend className="font-bold mb-2">Obszary</legend>
-          <div className="flex flex-wrap gap-2">
-            {OBSZARY.map((o) => (
-              <button type="button" key={o.id} aria-pressed={nowy.obszary.includes(o.id)}
-                onClick={() => ustaw('obszary', nowy.obszary.includes(o.id) ? nowy.obszary.filter((x) => x !== o.id) : [...nowy.obszary, o.id])}
-                className={'min-h-10 px-3 rounded-full text-sm font-bold border-2 ' + (nowy.obszary.includes(o.id) ? 'bg-teal-light border-teal text-teal-dark' : 'border-line')}>
-                {o.nazwa}
-              </button>
-            ))}
-          </div>
-        </fieldset>
         <label className="flex flex-col gap-1 font-bold max-w-xs">
           Termin składania
           <input type="date" value={nowy.termin} onChange={(e) => ustaw('termin', e.target.value)} className="min-h-11 px-3 rounded-lg border border-[#B8C2D0] font-normal" />
@@ -434,15 +315,51 @@ function Nabory() {
           <div className="flex flex-wrap items-center gap-3 mt-1">
             {nowy.wzor && <WzorWniosku nabor={nowy} />}
             <WyborPdf etykieta={nowy.wzor ? 'Zmień plik' : 'Wybierz plik PDF'} onWybierz={(w) => ustaw('wzor', w)} />
-            {nowy.wzor && <button type="button" onClick={() => ustaw('wzor', null)} className="min-h-11 px-3 font-bold text-[#9B1C1C]">Usuń</button>}
+            {nowy.wzor && <button type="button" onClick={() => { ustaw('wzor', null); setPolaNowego(null) }} className="min-h-11 px-3 font-bold text-[#9B1C1C]">Usuń</button>}
           </div>
         </div>
-        <p className="text-sm text-muted">Pola wniosku: domyślny szablon ({DOMYSLNE_POLA.map((p) => p.etykieta).join(', ')}).</p>
+        <PolaZWzoru wzor={nowy.wzor} nabor={nowy} wartosc={polaNowego} onZmiana={setPolaNowego} />
         <button type="submit" disabled={!nowy.nazwa.trim() || !nowy.termin || !nowy.obszary.length} className="self-start min-h-11 px-5 rounded-lg bg-ink text-white font-bold disabled:opacity-50">
           Ogłoś nabór
         </button>
       </form>
     </div>
+  )
+}
+
+const zLimitem = (p) => ({ ...p, limit: Math.max(100, Math.min(10000, Number(p.limit) || 1500)) })
+// Do zapisu: limity w zakresie, bez pustych pytań (i bez odsyłaczy do nich)
+const doZapisu = ({ pola, pytania, uklad = null }) => {
+  const ok = pytania.filter((q) => q.tresc.trim())
+  const ids = new Set(ok.map((q) => q.id))
+  return { pola: pola.map((p) => ({ ...zLimitem(p), pytania: (p.pytania || []).filter((x) => ids.has(x)) })), pytania: ok, uklad }
+}
+
+// Pola wniosku i pytania istniejącego naboru – podgląd, a po podmianie wzoru odczyt i zatwierdzenie
+function PolaNaboru({ n, maWnioski }) {
+  const { ustawPolaNaboru } = useDane()
+  const zNaboru = () => (n.pola.some((p) => p.zrodlo) ? null : { pola: n.pola, pytania: n.pytania || [], uklad: n.uklad || null })
+  const [robocze, setRobocze] = useState(zNaboru)
+  const [zapisano, setZapisano] = useState(false)
+  const zmienione = JSON.stringify(robocze) !== JSON.stringify(zNaboru())
+  return (
+    <details className="rounded-xl" open={zmienione || undefined}>
+      <summary className="cursor-pointer font-bold min-h-11 flex items-center">
+        Pola wniosku ({n.pola.length}){n.pytania?.length ? ` i pytania do wnioskodawcy (${n.pytania.length})` : ''}
+        {zapisano && !zmienione && <span role="status" className="ml-3 text-teal-dark">✓ Zapisano</span>}
+      </summary>
+      <div className="flex flex-col gap-3 mt-2">
+        <PolaZWzoru wzor={n.wzor} nabor={n} wartosc={robocze} onZmiana={(v) => { setRobocze(v); setZapisano(false) }} />
+        {zmienione && (
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={() => { ustawPolaNaboru(n.id, robocze ? doZapisu(robocze) : { pola: DOMYSLNE_POLA, pytania: [], uklad: null }); setZapisano(true) }}
+              className="min-h-11 px-5 rounded-lg bg-ink text-white font-bold">Zapisz pola naboru</button>
+            <button type="button" onClick={() => setRobocze(zNaboru())} className="min-h-11 px-4 rounded-lg border-2 border-line font-bold">Anuluj zmiany</button>
+            {maWnioski && <span className="text-[15px] text-clay-dark font-bold">Do naboru są już wnioski – treść pól o tych samych nazwach zostanie, nowe pola będą puste.</span>}
+          </div>
+        )}
+      </div>
+    </details>
   )
 }
 
@@ -469,124 +386,18 @@ function WyborPdf({ etykieta, onWybierz }) {
   )
 }
 
-// ── Tester innowacji: ogłaszanie testów, wybór testerów, raporty ──
-function TesterROPS() {
-  const { testy, biblioteka, fiszki, zgloszeniaTestow, opinie, dodajTest, zmienStatusTestu, decyzjaTestera } = useDane()
-  const puste = { zasob: '', tytul: '', opis: '', miejsce: '', miejsca: 10, termin: '' }
-  const [nowy, setNowy] = useState(puste)
-  const ustaw = (k, v) => setNowy({ ...nowy, [k]: v })
-  // Testować można innowację z Biblioteki albo opublikowany pomysł z prototypem (etap ≥ 2)
-  const doWyboru = [
-    ...biblioteka.map((b) => ({ klucz: 'biblioteka:' + b.id, nazwa: 'Biblioteka: ' + b.tytul })),
-    ...fiszki.filter((f) => f.status === 'opublikowana' && f.etap >= 2).map((f) => ({ klucz: 'fiszka:' + f.id, nazwa: 'Pomysł: ' + f.tytul })),
-  ]
-  const nazwaZasobu = (z) => (z.typ === 'biblioteka' ? biblioteka.find((b) => b.id === z.id) : fiszki.find((f) => String(f.id) === String(z.id)))?.tytul
-  const opinieBiblioteki = opinie.filter((o) => o.zasob.typ === 'biblioteka' && !o.testId)
-
-  function dodaj(e) {
-    e.preventDefault()
-    const [typ, id] = nowy.zasob.split(':')
-    dodajTest({ ...nowy, miejsca: Number(nowy.miejsca), zasob: { typ, id: typ === 'fiszka' ? Number(id) : id } })
-    setNowy(puste)
-  }
-
-  return (
-    <div className="flex flex-col gap-8">
-      {testy.map((t) => {
-        const chetni = zgloszeniaTestow.filter((z) => z.testId === t.id)
-        return (
-          <section key={t.id} className="bg-white border border-line rounded-2xl p-6 flex flex-col gap-4">
-            <div className="flex flex-wrap justify-between items-start gap-3">
-              <div>
-                <span className={'inline-block px-2.5 py-0.5 rounded-full text-sm font-bold mb-1 ' + STATUS_TESTU[t.status].klasa}>{STATUS_TESTU[t.status].nazwa}</span>
-                <h2 className="font-display font-bold text-2xl">{t.tytul}</h2>
-                <p className="text-[15px] text-muted">{nazwaZasobu(t.zasob)} · {t.miejsce} · miejsc: {t.miejsca}</p>
-              </div>
-              <div className="flex gap-2">
-                {t.status === 'rekrutacja' && <button onClick={() => zmienStatusTestu(t.id, 'trwa')} className="min-h-10 px-3 rounded-lg bg-teal text-white font-bold text-sm">Rozpocznij test</button>}
-                {t.status === 'trwa' && <button onClick={() => zmienStatusTestu(t.id, 'zakonczony')} className="min-h-10 px-3 rounded-lg border-2 border-ink font-bold text-sm">Zakończ test</button>}
-              </div>
-            </div>
-            <div>
-              <h3 className="font-bold mb-2">Chętni ({chetni.length})</h3>
-              {chetni.length === 0 && <p className="text-muted">Jeszcze nikt się nie zgłosił.</p>}
-              <ul className="flex flex-col gap-2">
-                {chetni.map((z) => (
-                  <li key={z.id} className="rounded-xl bg-ground px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-                    <p><strong>{z.imie}</strong> · {z.kim}{z.dlaczego && <span className="text-muted"> – „{z.dlaczego}”</span>}</p>
-                    {z.status === 'zgloszony' ? (
-                      <span className="flex gap-2">
-                        <button onClick={() => decyzjaTestera(z.id, 'przyjety')} className="min-h-10 px-3 rounded-lg bg-teal text-white font-bold text-sm">Przyjmij</button>
-                        <button onClick={() => decyzjaTestera(z.id, 'odrzucony')} className="min-h-10 px-3 rounded-lg border-2 border-line font-bold text-sm">Odrzuć</button>
-                      </span>
-                    ) : (
-                      <span className="text-sm font-bold text-muted">{z.status === 'przyjety' ? 'przyjęty' : 'odrzucony'}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <RaportOpinii opinie={opinie.filter((o) => o.testId === t.id)} />
-          </section>
-        )
-      })}
-
-      {opinieBiblioteki.length > 0 && (
-        <section className="bg-white border border-line rounded-2xl p-6 flex flex-col gap-4">
-          <h2 className="font-display font-bold text-2xl">Opinie o innowacjach z Biblioteki</h2>
-          {[...new Set(opinieBiblioteki.map((o) => o.zasob.id))].map((id) => (
-            <RaportOpinii key={id} tytul={nazwaZasobu({ typ: 'biblioteka', id })} opinie={opinieBiblioteki.filter((o) => tenSamZasob(o.zasob, { typ: 'biblioteka', id }))} />
-          ))}
-        </section>
-      )}
-
-      <form onSubmit={dodaj} className="bg-white border border-line rounded-2xl p-6 flex flex-col gap-3 max-w-3xl">
-        <h2 className="font-display font-bold text-2xl">Ogłoś test</h2>
-        <p className="text-muted text-[15px] -mt-1">Test pojawi się w zakładce „Tester”. Chętni zgłaszają się, Ty wybierasz grupę, a ich opinie trafiają do raportu.</p>
-        <label className="flex flex-col gap-1 font-bold">
-          Co testujemy?
-          <select value={nowy.zasob} onChange={(e) => ustaw('zasob', e.target.value)} className="min-h-11 px-3 rounded-lg border border-[#B8C2D0] font-normal">
-            <option value="">— wybierz —</option>
-            {doWyboru.map((d) => <option key={d.klucz} value={d.klucz}>{d.nazwa}</option>)}
-          </select>
-        </label>
-        <Pole etykieta="Nazwa testu" wartosc={nowy.tytul} onZmiana={(v) => ustaw('tytul', v)} />
-        <Pole etykieta="Na czym polega test, kogo szukamy" wartosc={nowy.opis} onZmiana={(v) => ustaw('opis', v)} wiersze={2} />
-        <div className="flex flex-wrap gap-3">
-          <Pole etykieta="Gdzie" wartosc={nowy.miejsce} onZmiana={(v) => ustaw('miejsce', v)} />
-          <label className="flex flex-col gap-1 font-bold w-32">
-            Miejsc
-            <input type="number" min="1" value={nowy.miejsca} onChange={(e) => ustaw('miejsca', e.target.value)} className="min-h-11 px-3 rounded-lg border border-[#B8C2D0] font-normal" />
-          </label>
-          <label className="flex flex-col gap-1 font-bold">
-            Zgłoszenia do
-            <input type="date" value={nowy.termin} onChange={(e) => ustaw('termin', e.target.value)} className="min-h-11 px-3 rounded-lg border border-[#B8C2D0] font-normal" />
-          </label>
-        </div>
-        <button type="submit" disabled={!nowy.zasob || !nowy.tytul.trim() || !nowy.termin} className="self-start min-h-11 px-5 rounded-lg bg-ink text-white font-bold disabled:opacity-50">Ogłoś test</button>
-      </form>
-    </div>
-  )
-}
-
 // ── Trendy potrzeb (agregacja – widoczna tylko dla ROPS) ───
 function Trendy() {
-  const { zgloszenia, fiszki } = useDane()
-  // Sygnały potrzeb: zapytania z wyszukiwarki + fiszki (każda fiszka to też zgłoszony problem)
-  const sygnaly = [
-    ...zgloszenia.map((z) => ({ obszary: z.obszary || [], powiat: z.powiat })),
-    ...fiszki.map((f) => ({ obszary: f.obszar ? [f.obszar] : [], powiat: f.powiat })),
-  ]
-  const wgObszaru = policz(sygnaly.flatMap((s) => s.obszary)).map((x) => ({ ...x, nazwa: obszarPoId(x.nazwa)?.nazwa || x.nazwa }))
-  const wgPowiatu = policz(sygnaly.filter((s) => s.powiat).map((s) => s.powiat)).slice(0, 8)
+  const { zgloszenia } = useDane()
+  // Sygnały potrzeb: zapytania z wyszukiwarki i wyzwania zgłoszone przez gminy
+  const wgPowiatu = policz(zgloszenia.filter((z) => z.powiat).map((z) => z.powiat)).slice(0, 8)
 
   return (
     <div className="flex flex-col gap-6">
       <p className="text-muted max-w-3xl">
-        Każde zapytanie w wyszukiwarce, wyzwanie zgłoszone przez gminę i każda fiszka to sygnał potrzeby, przypisany do obszaru z Mapy Wyzwań. Tu widać, gdzie potrzeby rosną – także tam, gdzie w Bibliotece brakuje innowacji.
+        Każde zapytanie w wyszukiwarce i wyzwanie zgłoszone przez gminę to sygnał potrzeby. Tu widać, czego szukają mieszkańcy i skąd przychodzą zgłoszenia.
       </p>
       <div className="flex flex-wrap gap-6 items-start">
-        <RankingSlupkowy tytul="Potrzeby według obszarów" opis={`${sygnaly.length} sygnałów: zapytania i fiszki`} dane={wgObszaru} />
         <RankingSlupkowy tytul="Skąd przychodzą zgłoszenia" opis="Sygnały z przypisanym powiatem" dane={wgPowiatu} />
       </div>
       <section className="bg-white border border-line rounded-2xl p-6">
@@ -596,7 +407,7 @@ function Trendy() {
             <li key={z.id} className="flex flex-wrap justify-between gap-2 px-3.5 py-2.5 rounded-lg bg-ground">
               <span>{z.zrodlo === 'jst' && <span className="mr-2 px-2 py-0.5 rounded-full bg-clay-light text-clay-dark text-xs font-bold">gmina</span>}{z.tekst}</span>
               <span className="text-sm text-muted">
-                {(z.obszary || []).map((o) => obszarPoId(o)?.nazwa).join(', ') || 'obszar nierozpoznany'} · {new Date(z.data).toLocaleDateString('pl-PL')}
+                {new Date(z.data).toLocaleDateString('pl-PL')}
               </span>
             </li>
           ))}

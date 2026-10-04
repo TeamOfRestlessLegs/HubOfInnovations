@@ -9,11 +9,30 @@ from core.vector_store import InnovationNotFound
 from model.analysis import (
     AmbiguousNameResponse, AnalysisByNameRequest, BenchmarkRequest, Candidate, Comparison, InnovationAnalysis,
 )
-from model.innovations import SearchRequest, SearchResponse
+from model.innovations import Category, InnovationDetail, InnovationList, SearchRequest, SearchResponse
 
 innovationsRoute = APIRouter(prefix="/innovations", tags=["innovations"])
 
 Slug = Annotated[str, Path(pattern=r"^[a-z0-9-]+$", max_length=200)]
+
+
+@innovationsRoute.get("", response_model=InnovationList)
+async def listInnovations(
+    store: Store,
+    category: Annotated[str | None, Query(pattern=r"^[a-z0-9-]+$", max_length=200)] = None,
+    q: Annotated[str | None, Query(min_length=2, max_length=200)] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 24,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> InnovationList:
+    """Biblioteka Innowacji ROPS do przeglądania (bez OpenAI): alfabetycznie albo – z `q` – wg słów kluczowych."""
+    total, results = store.browse(category, q, limit, offset)
+    return InnovationList(total=total, results=results)
+
+
+@innovationsRoute.get("/categories", response_model=list[Category])
+async def listCategories(store: Store) -> list[Category]:
+    """Kategorie Biblioteki z liczbą innowacji."""
+    return store.categories()
 
 
 @innovationsRoute.post("/search", response_model=SearchResponse)
@@ -40,6 +59,15 @@ async def similarInnovations(
         raise HTTPException(status_code=404, detail=f"Nie znaleziono innowacji {category}/{slug}")
     details_available = await innovations.enrich(results) if include_details else True
     return SearchResponse(results=results, details_available=details_available)
+
+
+@innovationsRoute.get("/{category}/{slug}", response_model=InnovationDetail)
+async def innovationDetail(category: Slug, slug: Slug, store: Store) -> InnovationDetail:
+    """Pełny opis innowacji i lista materiałów (PDF) – np. dla Middlemana i karty w Zasobniku."""
+    try:
+        return InnovationDetail(**await store.detail(f"{category}/{slug}"))
+    except InnovationNotFound:
+        raise HTTPException(status_code=404, detail=f"Nie znaleziono innowacji {category}/{slug}")
 
 
 # ---------------------------------------------------------------------- analizy (core/analyzer.py)

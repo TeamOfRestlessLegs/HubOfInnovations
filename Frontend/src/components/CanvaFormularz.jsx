@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { CANVA, SEKCJE, sekcjaGotowa, brakujaceSekcje } from '../data/canva.js'
+import { poleCanvy, LIMIT_CANVY } from '../data/asystent.js'
+import AsystentPola, { usePropozycje } from './AsystentPola.jsx'
 
 // Social Innovation Canvas jako formularz. Sterowany z zewnątrz (odpowiedzi + onZmiana),
 // bo żyje wewnątrz wniosku do naboru i zapisuje się razem z nim.
-export default function CanvaFormularz({ odpowiedzi, onZmiana, tylkoOdczyt = false, przyciskKoncowy }) {
+// `kontekstAI` (z data/asystent.js) włącza przy polach do pisania przycisk „Podpowiedz” asystenta AI.
+export default function CanvaFormularz({ odpowiedzi, onZmiana, tylkoOdczyt = false, przyciskKoncowy, kontekstAI }) {
   const [aktywna, setAktywna] = useState(0)
+  const ai = usePropozycje(kontekstAI, 'canva')
   const sekcja = SEKCJE[aktywna]
   const brakujace = brakujaceSekcje(odpowiedzi)
   const gotowe = SEKCJE.length - brakujace.length
@@ -58,7 +62,26 @@ export default function CanvaFormularz({ odpowiedzi, onZmiana, tylkoOdczyt = fal
           </div>
 
           {sekcja.pytania.map((p) => (
-            <Pytanie key={p.id} pytanie={p} wartosc={odpowiedzi[p.id]} onZmiana={(v) => onZmiana(p.id, v)} tylkoOdczyt={tylkoOdczyt} />
+            <Pytanie key={p.id} pytanie={p} wartosc={odpowiedzi[p.id]} onZmiana={(v) => onZmiana(p.id, v)} tylkoOdczyt={tylkoOdczyt}>
+              {kontekstAI && !tylkoOdczyt && p.typ === 'tekst' && (
+                <AsystentPola
+                  poleId={'canva-' + p.id}
+                  propozycja={ai.propozycje[p.id]}
+                  limit={LIMIT_CANVY}
+                  pracuje={Boolean(ai.pracuje[p.id])}
+                  blad={ai.bledy[p.id]}
+                  przycisk={(odpowiedzi[p.id] || '').trim() ? '💡 Rozwiń z asystentem' : '💡 Podpowiedz'}
+                  moznaCofnac={ai.cofnij[p.id] !== undefined}
+                  onPopros={(polecenie) => ai.popros(poleCanvy(p, odpowiedzi[p.id]), polecenie)}
+                  onWstaw={(poprawSam) => {
+                    ai.wstaw(p.id, odpowiedzi[p.id], (v) => onZmiana(p.id, v))
+                    if (poprawSam) setTimeout(() => document.getElementById('canva-' + p.id)?.focus())
+                  }}
+                  onZostaw={() => ai.zostaw(p.id)}
+                  onCofnij={() => ai.wycofaj(p.id, (v) => onZmiana(p.id, v))}
+                />
+              )}
+            </Pytanie>
           ))}
 
           <div className="flex flex-wrap justify-between gap-3 pt-4 border-t border-[#E6EAF0]">
@@ -95,6 +118,11 @@ export default function CanvaFormularz({ odpowiedzi, onZmiana, tylkoOdczyt = fal
             </div>
           )}
           <p className="text-sm text-white/70">Część odpowiedzi wypełniliśmy z Twojej fiszki – sprawdź je.</p>
+          {kontekstAI && (
+            <p className="bg-[#1C2E52] rounded-xl p-3.5 text-[15px]">
+              💡 Nie wiesz, co wpisać? Przy polach do pisania kliknij <strong>„Podpowiedz”</strong> – asystent zaproponuje odpowiedź, a Ty zdecydujesz, czy ją wstawić.
+            </p>
+          )}
         </aside>
       </div>
     </div>
@@ -102,11 +130,11 @@ export default function CanvaFormularz({ odpowiedzi, onZmiana, tylkoOdczyt = fal
 }
 
 // Jeden komponent rysuje każdy typ pytania z data/canva.js
-function Pytanie({ pytanie, wartosc, onZmiana, tylkoOdczyt }) {
+function Pytanie({ pytanie, wartosc, onZmiana, tylkoOdczyt, children }) {
   return (
-    <fieldset disabled={tylkoOdczyt}>
+    <fieldset disabled={tylkoOdczyt} className="flex flex-col gap-3">
       <legend className="font-bold text-xl mb-1">{pytanie.tytul}</legend>
-      {pytanie.opis && <p className="text-muted mb-3">{pytanie.opis}</p>}
+      {pytanie.opis && <p className="text-muted">{pytanie.opis}</p>}
 
       {pytanie.typ === 'wybor' && (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
@@ -153,6 +181,7 @@ function Pytanie({ pytanie, wartosc, onZmiana, tylkoOdczyt }) {
 
       {pytanie.typ === 'tekst' && (
         <textarea
+          id={'canva-' + pytanie.id}
           rows={3}
           aria-label={pytanie.tytul}
           value={wartosc || ''}
@@ -160,6 +189,7 @@ function Pytanie({ pytanie, wartosc, onZmiana, tylkoOdczyt }) {
           className="w-full p-3.5 rounded-xl border border-[#B8C2D0] resize-y"
         />
       )}
+      {children}
     </fieldset>
   )
 }

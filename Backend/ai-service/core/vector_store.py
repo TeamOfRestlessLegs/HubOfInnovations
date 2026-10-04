@@ -47,6 +47,7 @@ class VectorStore:
         profiles = self._profiles.get(include=["documents", "metadatas"])
         self._profile_ids: list[str] = profiles["ids"]
         self._profile_meta: dict[str, dict] = dict(zip(profiles["ids"], profiles["metadatas"]))
+        self._profile_docs: dict[str, str] = dict(zip(profiles["ids"], profiles["documents"]))
         self._bm25 = BM25(profiles["documents"])
 
     @property
@@ -93,6 +94,41 @@ class VectorStore:
         )
         ranked = [(i, round(1 - d, 4)) for i, d in zip(result["ids"][0], result["distances"][0])]
         return await self._hits(ranked, embedding)
+
+    def browse(self, category: str | None, query: str | None, limit: int, offset: int) -> tuple[int, list[dict]]:
+        """Przeglądanie Biblioteki bez OpenAI: alfabetycznie albo (z `query`) wg BM25 na profilach."""
+        if query:
+            ids = self._bm25_ranking(query, category)
+        else:
+            ids = sorted(self._profile_ids, key=lambda i: self._profile_meta[i]["tytul"].lower())
+            if category:
+                ids = [i for i in ids if self._profile_meta[i]["kategoria_slug"] == category]
+        return len(ids), [self._summary(i) for i in ids[offset:offset + limit]]
+
+    def categories(self) -> list[dict]:
+        counts: dict[str, dict] = {}
+        for meta in self._profile_meta.values():
+            c = counts.setdefault(meta["kategoria_slug"], {"slug": meta["kategoria_slug"], "name": meta["kategoria"], "count": 0})
+            c["count"] += 1
+        return sorted(counts.values(), key=lambda c: c["name"])
+
+    async def detail(self, innovation_id: str) -> dict:
+        """Pełny opis innowacji (dokument profilu) i lista materiałów (PDF-y) z kolekcji fragmentów."""
+        if innovation_id not in self._profile_meta:
+            raise InnovationNotFound(innovation_id)
+        chunks = await asyncio.to_thread(self._chunks.get, where={"innowacja_id": innovation_id}, include=["metadatas"])
+        materials = {}
+        for meta in chunks["metadatas"]:
+            if meta["zrodlo"] != "opis":
+                materials.setdefault(meta["plik_nazwa"], {"file": meta["plik_nazwa"], "source": meta["zrodlo"]})
+        return {**self._summary(innovation_id), "description": self._description(innovation_id),
+                "materials": list(materials.values())}
+
+    async def query_context(self, innovation_id: str, query: str, limit: int = 6) -> list[dict]:
+        """Fragmenty opisu i materiałów innowacji najbliższe zapytaniu – kontekst dla Middlemana."""
+        if innovation_id not in self._profile_meta:
+            raise InnovationNotFound(innovation_id)
+        return await self._fragments(innovation_id, await self.embed(query), limit)
 
     # ------------------------------------------------------------------ dla analiz (core/analyzer.py)
 
@@ -152,6 +188,22 @@ class VectorStore:
 
     # ------------------------------------------------------------------ wewnętrzne
 
+    def _description(self, innovation_id: str) -> str:
+        """Dokument profilu bez dwóch pierwszych linii (tytuł, kategoria)."""
+        return self._profile_docs.get(innovation_id, "").split("\n", 2)[-1].strip()
+
+    def _summary(self, innovation_id: str) -> dict:
+        meta = self._profile_meta[innovation_id]
+        category_slug, slug = innovation_id.split("/", 1)
+        # skrót jako zwykły tekst: bez znaczników Markdown (#, >, *, linki) i z pojedynczymi spacjami
+        description = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", self._description(innovation_id))
+        description = " ".join(re.sub(r"[#>*_`|]+", " ", description).split())
+        return {
+            "id": innovation_id, "category_slug": category_slug, "slug": slug, "title": meta["tytul"],
+            "category": meta["kategoria"], "url": meta["url"],
+            "summary": description[:300] + ("…" if len(description) > 300 else ""),
+        }
+
     def _bm25_ranking(self, query: str, category: str | None) -> list[str]:
         scores = self._bm25.scores(query)
         ranked = sorted(scores.items(), key=lambda item: -item[1])
@@ -178,10 +230,10 @@ class VectorStore:
             })
         return hits
 
-    async def _fragments(self, innovation_id: str, embedding: list[float]) -> list[dict]:
+    async def _fragments(self, innovation_id: str, embedding: list[float], limit: int = MAX_FRAGMENTS) -> list[dict]:
         """Najlepiej pasujące fragmenty danej innowacji — cytaty do wyświetlenia / kontekst dla LLM."""
         result = await asyncio.to_thread(
-            self._chunks.query, query_embeddings=[embedding], n_results=MAX_FRAGMENTS,
+            self._chunks.query, query_embeddings=[embedding], n_results=limit,
             where={"innowacja_id": innovation_id}, include=["documents", "metadatas", "distances"],
         )
         return [
