@@ -12,7 +12,7 @@ const linki = [
 ]
 
 // Nazwa panelu zależy od roli
-const NAZWA_PANELU = { resident: 'Moje sprawy', jst: 'Panel gminy', ekspert: 'Panel eksperta', rops_admin: 'Panel ROPS' }
+const NAZWA_PANELU = { resident: 'Moje sprawy', jst: 'Panel', ekspert: 'Panel eksperta', rops_admin: 'Panel ROPS' }
 
 export default function Header() {
   const { uzytkownik } = useAuth()
