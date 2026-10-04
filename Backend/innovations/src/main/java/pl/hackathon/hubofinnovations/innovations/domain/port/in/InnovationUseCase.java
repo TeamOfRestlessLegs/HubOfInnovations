@@ -26,4 +26,7 @@ public interface InnovationUseCase {
     void deleteFile(String categorySlug, String slug, long fileId);
 
     ImportResultDto importData(ImportCommand command);
+
+    void joinAsTester(String categorySlug, String slug);
+    TestResultDto runTests(String categorySlug, String slug);
 }

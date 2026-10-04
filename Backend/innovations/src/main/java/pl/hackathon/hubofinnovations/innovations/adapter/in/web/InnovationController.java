@@ -80,4 +80,19 @@ public class InnovationController {
             @PathVariable long fileId) {
         innovationUseCase.deleteFile(categorySlug, slug, fileId);
     }
+
+    @PostMapping("/{categorySlug}/{slug}/testers")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void joinAsTester(
+            @PathVariable String categorySlug,
+            @PathVariable String slug) {
+        innovationUseCase.joinAsTester(categorySlug, slug);
+    }
+
+    @PostMapping("/{categorySlug}/{slug}/tests/run")
+    public TestResultDto runTests(
+            @PathVariable String categorySlug,
+            @PathVariable String slug) {
+        return innovationUseCase.runTests(categorySlug, slug);
+    }
 }
