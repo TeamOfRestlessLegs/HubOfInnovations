@@ -5,8 +5,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from openai import AsyncOpenAI
+import uvicorn
 
 from core.config import get_settings
+from core.innovations_client import InnovationsClient
 from core.observer_store import ObserverStore
 from core.vector_store import VectorStore
 from routes.innovations import innovationsRoute
@@ -21,6 +23,7 @@ async def lifespan(app: FastAPI):
     app.state.store = VectorStore(
         settings.vector_db_path, settings.collection, settings.profiles_collection, openai
     )
+    app.state.innovations = InnovationsClient(settings.innovations_api_url, settings.innovations_timeout)
     # Obserwator jest opcjonalny: bez bazy / pakietu splot_dane działa reszta serwisu, a /observer zwraca 503
     app.state.observer, app.state.observer_error, warm_up = None, None, None
     try:
@@ -33,6 +36,7 @@ async def lifespan(app: FastAPI):
     yield
     if warm_up:
         warm_up.cancel()
+    await app.state.innovations.close()
     await openai.close()
 
 
@@ -57,4 +61,11 @@ async def health(request: Request) -> JSONResponse:
             else {"error": request.app.state.observer_error},
         },
         status_code=200
+    )
+
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000
     )

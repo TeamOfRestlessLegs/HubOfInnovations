@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   oauth:
     build: ./oauth
@@ -9,16 +7,34 @@ services:
     networks:
       - hubofinnovations-network
     environment:
-      - SERVER_PORT=${OAUTH_INTERNAL_PORT}
+      - SERVER_PORT=${OAUTH_INTERNAL_PORT:-8080}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
+  ai-service:
+    build: ./ai-service
+    container_name: ai-service
+    ports:
+      - "8000:8000"
+    networks:
+      - hubofinnovations-network
+    env_file:
+      - ./ai-service/.env                       # OPENAI_KEY (plik nie trafia do obrazu ani do gita)
+    environment:
+      - VECTOR_DB_PATH=/app/vector_db
+      - SPLOT_DANE_DIR=/dane
+      - INNOVATIONS_API_URL=http://innovations:8081   # szczegóły innowacji do /search (nazwa serwisu w sieci dockera)
+    volumes:
+      - ./ai-service/vector_db:/app/vector_db   # budowana przez automations/build_vector_db.py
+      - ../Dane:/dane                           # Obserwator (pakiet splot_dane + obserwator.sqlite)
+      - hf_models:/models                       # cache modelu embeddingów Obserwatora
 
   innovations:
-    build: ./innovations
+    build: ./innovations                        # wymaga wcześniej: mvn -pl innovations -am package
     container_name: innovations
     ports:
       - "8081:8081"
@@ -27,12 +43,13 @@ services:
     environment:
       - SERVER_PORT=8081
       - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_PORT=5432                      # port wewnątrz sieci dockera, niezależny od mapowania na hosta
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-hubdb}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:16-alpine
@@ -48,6 +65,11 @@ services:
       - hubofinnovations-network
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-hubdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   hubofinnovations-network:
@@ -55,3 +77,4 @@ networks:
 
 volumes:
   postgres_data:
+  hf_models:

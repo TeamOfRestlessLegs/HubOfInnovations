@@ -4,7 +4,6 @@ fastapi
 fastapi[standard]
 pydantic-settings
 numpy
-# Obserwator (pakiet Dane/splot_dane): baza SQLite + indeks wektorowy z lokalnym modelem (~0,5 GB z PyTorch)
 PyYAML>=6.0
 requests>=2.31
 sqlite-vec>=0.1.6

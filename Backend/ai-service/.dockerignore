@@ -1,0 +1,12 @@
+# sekrety — przekazywane przez env_file w docker-compose, nigdy nie trafiają do obrazu
+.env
+# lokalne środowisko (Windows) i cache
+.venv/
+__pycache__/
+*.pyc
+# baza wektorowa montowana jako wolumen (budowana osobno przez automations/build_vector_db.py)
+vector_db/
+vector_db_tmp/
+vector_db_old/
+tests/
+query_example.py
