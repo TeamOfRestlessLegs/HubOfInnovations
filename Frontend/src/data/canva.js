@@ -191,7 +191,6 @@ export const brakujaceSekcje = (odpowiedzi) => SEKCJE.filter((s) => !sekcjaGotow
 
 // Canva na start wypełniona tym, co już wiemy z fiszki – użytkownik nie odpowiada drugi raz na te same pytania
 export function canvaZFiszki(f) {
-  const CZESTOTLIWOSC_Z_FISZKI = { codziennie: 'bardzo-czesto', czesto: 'czesto', czasami: 'czasami', rzadko: 'rzadko' }
   const GRUPA_Z_FISZKI = {
     'mieszkańcy wsi': 'mieszkańcy konkretnego miejsca',
     'cała społeczność lokalna': 'mieszkańcy konkretnego miejsca',
@@ -200,9 +199,6 @@ export function canvaZFiszki(f) {
   const uzytkownik = [...new Set((f.grupy || []).map((g) => GRUPA_Z_FISZKI[g] || g).filter((g) => opcjeUzytkownika.includes(g)))]
 
   return {
-    intensywnosc: f.intensywnosc,
-    czestotliwosc: CZESTOTLIWOSC_Z_FISZKI[f.czestotliwosc],
-    skala: f.skala,
     etap: f.etap,
     ...(uzytkownik.length ? { uzytkownik } : {}),
   }

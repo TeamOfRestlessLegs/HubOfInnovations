@@ -5,8 +5,12 @@ const temu = (n) => new Date(Date.now() - n * 864e5).toISOString()
 
 // Liczba poparć = poparcia z importu (dane przykładowe) + osoby, które kliknęły „Popieram”
 export const liczbaPoparc = (f) => (f.poparcia || 0) + (f.poparli?.length || 0)
-// Kto prowadzi pomysł: autor, a po przejęciu także gmina
-export const prowadzi = (f, u) => !!u && (f.autorId === u.id || f.prowadzacy?.id === u.id)
+// Kto prowadzi pomysł: autor, a po przejęciu – tylko gmina (przejęcie jest ostateczne).
+// Prowadzący edytuje fiszkę, zadaje pytania, składa wnioski.
+export const prowadzacyId = (f) => f.prowadzacy?.id || f.autorId
+export const prowadzi = (f, u) => !!u && prowadzacyId(f) === u.id
+// Kto ma wgląd w nieopublikowany wątek: autor (także po przejęciu) i gmina prowadząca
+export const uczestniczy = (f, u) => !!u && (f.autorId === u.id || f.prowadzacy?.id === u.id)
 // Kto śledzi wątek (dostaje powiadomienia o aktualnościach)
 export const obserwatorzy = (f) => [...new Set([f.autorId, f.prowadzacy?.id, ...(f.poparli || [])].filter(Boolean))]
 

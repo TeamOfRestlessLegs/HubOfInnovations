@@ -2,9 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { bibliotekaStartowa } from './biblioteka.js'
 import { fiszkiStartowe } from './fiszki.js'
 import { naboryStartowe } from './nabory.js'
-import { testyStartowe, zgloszeniaTestowStartowe, opinieStartowe } from './tester.js'
 import { useAuth, ROLE } from '../auth/AuthContext.jsx'
-import { aktualnosciStartowe, komentarzeStartowe, pytaniaStartowe, obserwatorzy } from './watekFiszki.js'
+import { aktualnosciStartowe, komentarzeStartowe, pytaniaStartowe, obserwatorzy, prowadzi } from './watekFiszki.js'
 
 // Wspólne dane aplikacji – dopóki nie ma backendu, trzymane w localStorage przeglądarki.
 // Każda akcja odpowiada jednemu przyszłemu endpointowi API (komentarz obok).
@@ -17,24 +16,24 @@ import { aktualnosciStartowe, komentarzeStartowe, pytaniaStartowe, obserwatorzy 
 //   wnioski     – wnioski wygenerowane z fiszki do konkretnego naboru (widzi autor + ROPS)
 //   watki       – rozmowy (przy fiszce, pytanie do ROPS/eksperta, wdrożenie dla JST); widzą tylko uczestnicy
 //   powiadomienia – tworzone AUTOMATYCZNIE przy akcjach (docelowo backend: zdarzenie → powiadomienie + e-mail)
-//   testy, zgloszeniaTestow, opinie – Tester innowacji
 //   aktualnosci, komentarze, pytania – publiczny wątek pomysłu (/pomysl/:id)
+//   przejecia   – prośby gmin o przejęcie prowadzenia (tabela takeover_requests); STATUS: czeka | przyjeta | odrzucona | wycofana
 //
 // ADRESAT (watek.uczestnicy, powiadomienie.do): id użytkownika albo cała rola: 'rola:rops_admin', 'rola:ekspert'
 
-// v3: Biblioteka ROPS osobno od fiszek, obszary z Mapy Wyzwań, nabory i wnioski
+// v3: Biblioteka ROPS osobno od fiszek, nabory i wnioski
 const KLUCZ = 'splot-dane-v3'
 
 const dni = (n) => new Date(Date.now() - n * 864e5).toISOString()
 const zgloszeniaStartowe = [
-  { tekst: '[przykład] Seniorzy nie mają jak dojechać do lekarza', obszary: ['seniorzy', 'zdrowie'], powiat: 'myślenicki', data: dni(1) },
-  { tekst: '[przykład] Babcia nie umie obsługiwać telefonu', obszary: ['seniorzy'], powiat: 'myślenicki', data: dni(1) },
-  { tekst: '[przykład] Brak autobusu do przychodni', obszary: ['zdrowie', 'seniorzy'], powiat: 'limanowski', data: dni(2) },
-  { tekst: '[przykład] Syn po szkole zamyka się w pokoju i nie chce rozmawiać', obszary: ['psychika'], powiat: 'Kraków', data: dni(2) },
-  { tekst: '[przykład] Młodzież nie ma gdzie się spotykać', obszary: ['psychika'], powiat: 'wielicki', data: dni(3) },
-  { tekst: '[przykład] Nie stać nas na opał na zimę', obszary: ['ubostwo'], powiat: 'nowosądecki', data: dni(4) },
-  { tekst: '[przykład] Dzieci z Ukrainy w klasie nie rozumieją lekcji', obszary: ['cudzoziemcy'], powiat: 'Kraków', data: dni(5) },
-  { tekst: '[przykład] Seniorzy samotni w bloku', obszary: ['seniorzy', 'psychika'], powiat: 'krakowski', data: dni(6) },
+  { tekst: '[przykład] Seniorzy nie mają jak dojechać do lekarza', powiat: 'myślenicki', data: dni(1) },
+  { tekst: '[przykład] Babcia nie umie obsługiwać telefonu', powiat: 'myślenicki', data: dni(1) },
+  { tekst: '[przykład] Brak autobusu do przychodni', powiat: 'limanowski', data: dni(2) },
+  { tekst: '[przykład] Syn po szkole zamyka się w pokoju i nie chce rozmawiać', powiat: 'Kraków', data: dni(2) },
+  { tekst: '[przykład] Młodzież nie ma gdzie się spotykać', powiat: 'wielicki', data: dni(3) },
+  { tekst: '[przykład] Nie stać nas na opał na zimę', powiat: 'nowosądecki', data: dni(4) },
+  { tekst: '[przykład] Dzieci z Ukrainy w klasie nie rozumieją lekcji', powiat: 'Kraków', data: dni(5) },
+  { tekst: '[przykład] Seniorzy samotni w bloku', powiat: 'krakowski', data: dni(6) },
 ].map((z, i) => ({ id: 'z' + i, ...z }))
 
 function stanStartowy() {
@@ -48,12 +47,10 @@ function stanStartowy() {
     wnioski: [],
     watki: watkiStartowe,
     powiadomienia: [],
-    testy: testyStartowe,
-    zgloszeniaTestow: zgloszeniaTestowStartowe,
-    opinie: opinieStartowe,
     aktualnosci: aktualnosciStartowe,
     komentarze: komentarzeStartowe,
     pytania: pytaniaStartowe,
+    przejecia: [],
   }
 }
 
@@ -180,6 +177,7 @@ export function DaneProvider({ children }) {
       if (ja?.rola !== 'rops_admin') return
       const f = fiszka(id)
       const byla = f.status === 'opublikowana'
+      setDane((d) => ({ ...d, przejecia: d.przejecia.map((p) => (p.fiszkaId === id && p.status === 'czeka' ? { ...p, status: 'odrzucona', decyzja: teraz() } : p)) }))
       zmien('fiszki', id, { status: 'odrzucona', powodOdrzucenia: powod, usunietoPrzez: { id: ja.id, imie: ja.imie, data: new Date().toISOString() }, prosbaOEtap: false })
       aktualnosc(id, 'odrzucono', 'ROPS usunął pomysł. Wątek jest zakończony.', { powiadomic: false })
       powiadom([
@@ -187,6 +185,17 @@ export function DaneProvider({ children }) {
         // po publikacji informujemy też popierających i gminę prowadzącą
         ...(byla ? obserwatorzy(f).filter((a) => a !== f.autorId).map((a) => ({ do: a, typ: 'odrzucenie', tresc: `Pomysł „${f.tytul}” został usunięty przez ROPS.`, link: '/innowacje' })) : []),
       ])
+    },
+    // PUT /api/ideas/{id} – prowadzący (autor, a po przejęciu gmina) edytuje fiszkę;
+    // przed publikacją wraca do weryfikacji, a propozycje poprawek są oznaczane jako wprowadzone
+    edytujFiszke: (id, pola) => {
+      const f = fiszka(id)
+      if (!f || !prowadzi(f, ja) || f.status === 'odrzucona' || f.status === 'zarchiwizowana') return
+      zmien('fiszki', id, { ...pola, status: f.status === 'opublikowana' ? 'opublikowana' : 'do_weryfikacji' })
+      setDane((d) => ({ ...d, pytania: d.pytania.map((q) => (q.fiszkaId === id && q.typ === 'poprawka' ? { ...q, wprowadzona: true } : q)) }))
+      if (f.status !== 'opublikowana') {
+        powiadom([ROPS, 'rola:ekspert'].map((a) => ({ do: a, typ: 'fiszka_poprawiona', tresc: `Poprawiony pomysł czeka na poparcie: ${f.tytul}`, link: doWatku(id) })))
+      }
     },
     archiwizuj: (id) => zmien('fiszki', id, { status: 'zarchiwizowana' }),
     // PATCH /api/fiszki/{id}  – autor po poprawkach
@@ -199,9 +208,14 @@ export function DaneProvider({ children }) {
       zmien('fiszki', id, { prosbaOEtap: true })
       powiadom([{ do: ROPS, typ: 'prosba_o_etap', tresc: `Prośba o wyższy etap: ${fiszka(id)?.tytul}`, link: '/panel' }])
     },
+    // PATCH /api/ideas/{id}/stage {stage} – ROPS zawsze, gmina tylko przy pomyśle, który prowadzi
     ustawEtap: (id, etap) => {
+      const f = fiszka(id)
+      const gmina = ja?.rola === 'jst' && f.prowadzacy?.id === ja.id
+      if (ja?.rola !== 'rops_admin' && !gmina) return
       zmien('fiszki', id, { etap, prosbaOEtap: false })
-      aktualnosc(id, 'etap', `Potwierdzony etap: ${['', 'Pomysł', 'Prototyp', 'Przetestowane', 'Gotowe do wdrożenia'][etap]}.`)
+      const nazwa = ['', 'Pomysł', 'Prototyp', 'Przetestowane', 'Gotowe do wdrożenia'][etap]
+      aktualnosc(id, 'etap', gmina ? `Gmina prowadząca zmieniła etap na: ${nazwa}.` : `Potwierdzony etap: ${nazwa}.`)
     },
     odrzucProsbeOEtap: (id) => zmien('fiszki', id, { prosbaOEtap: false }),
     // ROPS prosi ekspertów o opinię = pytanie do ekspertów w wątku pomysłu
@@ -237,19 +251,38 @@ export function DaneProvider({ children }) {
     // POST /api/fiszki/{id}/aktualnosci – ROPS albo prowadzący publikuje, co się dzieje
     // tylko ROPS albo gmina prowadząca pomysł (autor nie publikuje oficjalnych informacji)
     dodajAktualnosc: (fiszkaId, tresc) => aktualnosc(fiszkaId, 'aktualizacja', tresc, { system: false }),
-    // POST /api/fiszki/{id}/przejecie – gmina prosi o przejęcie; autor decyduje
+    // ── Przejęcie prowadzenia przez gminę ──────────────────
+    // Jedna gmina prowadząca; przejęcie jest ostateczne (bez cofania).
+    // Po przejęciu gmina edytuje fiszkę, zmienia etap, składa wnioski i pisze oficjalne wpisy;
+    // autor zostaje pomysłodawcą (widzi wątek, ale już go nie prowadzi).
+
+    // POST /api/ideas/{id}/takeover-requests {message} – gmina; kilka gmin może prosić naraz, autor wybiera jedną
     poprosOPrzejecie: (fiszkaId, wiadomosc) => {
       const f = fiszka(fiszkaId)
-      zmien('fiszki', fiszkaId, { prosbaPrzejecia: { id: ja.id, imie: ja.imie, powiat: ja.powiat, wiadomosc, data: teraz() } })
+      if (ja?.rola !== 'jst' || f.status !== 'opublikowana' || f.prowadzacy) return
+      if (dane.przejecia.some((p) => p.fiszkaId === fiszkaId && p.gminaId === ja.id && p.status === 'czeka')) return
+      dodaj('przejecia', { id: 'pr' + Date.now(), fiszkaId, gminaId: ja.id, imie: ja.imie, powiat: ja.powiat, wiadomosc, status: 'czeka', data: teraz() })
       powiadom([{ do: f.autorId, typ: 'przejecie', tresc: `Gmina (pow. ${ja.powiat}) chce przejąć prowadzenie pomysłu „${f.tytul}”. Zdecyduj w wątku.`, link: doWatku(fiszkaId) }])
     },
-    // POST /api/fiszki/{id}/przejecie/decyzja – tylko autor
-    decyzjaPrzejecia: (fiszkaId, zgoda) => {
-      const f = fiszka(fiszkaId)
-      const p = f.prosbaPrzejecia
-      zmien('fiszki', fiszkaId, zgoda ? { prowadzacy: { id: p.id, imie: p.imie, powiat: p.powiat }, prosbaPrzejecia: null } : { prosbaPrzejecia: null })
-      if (zgoda) aktualnosc(fiszkaId, 'przejecie', `Gmina (pow. ${p.powiat}) prowadzi teraz pomysł. Pomysłodawca: ${f.autor}.`)
-      powiadom([{ do: p.id, typ: 'przejecie_decyzja', tresc: zgoda ? `Autor zgodził się – prowadzicie „${f.tytul}”.` : `Autor nie zgodził się na przejęcie „${f.tytul}”.`, link: doWatku(fiszkaId) }])
+    // POST /api/takeover-requests/{id}/withdraw – gmina wycofuje swoją prośbę, dopóki czeka
+    wycofajPrzejecie: (id) => setDane((d) => ({ ...d, przejecia: d.przejecia.map((p) => (p.id === id && p.gminaId === ja.id && p.status === 'czeka' ? { ...p, status: 'wycofana', decyzja: teraz() } : p)) })),
+    // POST /api/takeover-requests/{id}/decision {accept} – tylko autor.
+    // Zgoda: gmina prowadzi, pozostałe czekające prośby do tego pomysłu są automatycznie odrzucane.
+    decyzjaPrzejecia: (id, zgoda) => {
+      const p = dane.przejecia.find((x) => x.id === id)
+      const f = p && fiszka(p.fiszkaId)
+      if (!f || f.autorId !== ja.id || p.status !== 'czeka' || f.prowadzacy) return
+      const inne = zgoda ? dane.przejecia.filter((x) => x.fiszkaId === f.id && x.id !== id && x.status === 'czeka') : []
+      setDane((d) => ({
+        ...d,
+        przejecia: d.przejecia.map((x) => (x.id === id ? { ...x, status: zgoda ? 'przyjeta' : 'odrzucona', decyzja: teraz() } : inne.some((o) => o.id === x.id) ? { ...x, status: 'odrzucona', decyzja: teraz() } : x)),
+        fiszki: zgoda ? d.fiszki.map((x) => (x.id === f.id ? { ...x, prowadzacy: { id: p.gminaId, imie: p.imie, powiat: p.powiat }, prosbaOEtap: false } : x)) : d.fiszki,
+      }))
+      if (zgoda) aktualnosc(f.id, 'przejecie', `Gmina (pow. ${p.powiat}) prowadzi teraz pomysł. Pomysłodawca: ${f.autor}.`)
+      powiadom([
+        { do: p.gminaId, typ: 'przejecie_decyzja', tresc: zgoda ? `Autor zgodził się – prowadzicie „${f.tytul}”.` : `Autor nie zgodził się na przejęcie „${f.tytul}”.`, link: doWatku(f.id) },
+        ...inne.map((o) => ({ do: o.gminaId, typ: 'przejecie_decyzja', tresc: `Pomysł „${f.tytul}” poprowadzi inna gmina.`, link: doWatku(f.id) })),
+      ])
     },
 
     // ── Biblioteka (tylko ROPS) ─────────────────────────────
@@ -263,11 +296,11 @@ export function DaneProvider({ children }) {
     dodajZgloszenie: (z) => dodaj('zgloszenia', { id: 'z' + Date.now(), data: teraz(), ...z }),
 
     // ── Nabory (tylko ROPS) i wnioski ───────────────────────
-    // POST /api/nabory → powiadomienie dla autorów opublikowanych fiszek z pasujących obszarów
+    // POST /api/nabory → powiadomienie dla autorów opublikowanych fiszek
     dodajNabor: (n) => {
       dodaj('nabory', { ...n, id: 'n' + Date.now(), status: 'otwarty' })
       const autorzy = [...new Set(dane.fiszki.filter((f) => f.status === 'opublikowana').map((f) => f.autorId))]
-      powiadom(autorzy.map((a) => ({ do: a, typ: 'nabor', tresc: `Ruszył nabór pasujący do Twojego pomysłu: ${n.nazwa}`, link: '/panel' })))
+      powiadom(autorzy.map((a) => ({ do: a, typ: 'nabor', tresc: `Ruszył nowy nabór: ${n.nazwa}`, link: '/panel' })))
     },
     // POST /api/nabory/{id}/wzor (PDF) – dodanie lub podmiana wzoru wniosku
     ustawWzorNaboru: (id, wzor) => zmien('nabory', id, { wzor }),
@@ -308,31 +341,6 @@ export function DaneProvider({ children }) {
     zglosWyzwanieJST: (z) => {
       dodaj('zgloszenia', { id: 'z' + Date.now(), data: teraz(), zrodlo: 'jst', autorId: ja.id, autor: ja.imie, ...z })
       powiadom([{ do: ROPS, typ: 'wyzwanie_jst', tresc: `Gmina zgłasza wyzwanie (pow. ${z.powiat}): ${z.tekst.slice(0, 60)}`, link: '/panel' }])
-    },
-
-    // ── Tester innowacji ────────────────────────────────────
-    // POST /api/testy – ROPS ogłasza test
-    dodajTest: (t) => dodaj('testy', { ...t, id: 't' + Date.now(), status: 'rekrutacja' }),
-    // PATCH /api/testy/{id}
-    zmienStatusTestu: (id, status) => zmien('testy', id, { status }),
-    // POST /api/testy/{id}/zgloszenia
-    zglosSieDoTestu: (testId, z) => {
-      dodaj('zgloszeniaTestow', { id: 'zt' + Date.now(), testId, uzytkownikId: ja.id, imie: ja.imie, status: 'zgloszony', data: teraz(), ...z })
-      const t = dane.testy.find((x) => x.id === testId)
-      powiadom([{ do: ROPS, typ: 'zgloszenie_testu', tresc: `Nowy chętny do testu: ${t?.tytul}`, link: '/panel' }])
-    },
-    // PATCH /api/testy/zgloszenia/{id} – ROPS przyjmuje / odrzuca
-    decyzjaTestera: (id, status) => {
-      const z = dane.zgloszeniaTestow.find((x) => x.id === id)
-      const t = dane.testy.find((x) => x.id === z?.testId)
-      zmien('zgloszeniaTestow', id, { status })
-      powiadom([{ do: z?.uzytkownikId, typ: 'tester_decyzja', tresc: status === 'przyjety' ? `Jesteś w grupie testowej: ${t?.tytul}` : `Tym razem nie ma miejsca w teście: ${t?.tytul}`, link: '/tester' }])
-    },
-    // POST /api/opinie → powiadomienie dla autora fiszki (albo ROPS przy innowacji z Biblioteki)
-    dodajOpinie: (o) => {
-      dodaj('opinie', { ...o, id: 'o' + Date.now(), uzytkownikId: ja.id, imie: ja.imie, data: teraz() })
-      const autor = o.zasob.typ === 'fiszka' ? fiszka(o.zasob.id)?.autorId : ROPS
-      powiadom([{ do: autor, typ: 'opinia', tresc: `Nowa opinia testera (${o.ocena}/5)`, link: o.zasob.typ === 'fiszka' ? '/panel' : '/tester' }])
     },
 
     // Tylko do demo: przywraca dane przykładowe

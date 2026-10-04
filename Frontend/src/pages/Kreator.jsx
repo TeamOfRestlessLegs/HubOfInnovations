@@ -4,7 +4,6 @@ import { ETAPY } from '../data/etapy.js'
 import { GRUPY } from '../data/fiszka.js'
 import { useDane, opublikowane } from '../data/DaneContext.jsx'
 import { naborOtwarty } from '../data/nabory.js'
-import { obszarPoId } from '../data/obszary.js'
 import WzorWniosku from '../components/WzorWniosku.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 import SzczegolyFiszki from '../components/SzczegolyFiszki.jsx'
@@ -65,7 +64,6 @@ function WyborNaboru({ nabory }) {
           </div>
           <p>{n.opis}</p>
           <p className="text-[15px] text-muted"><strong className="text-ink">Kryteria:</strong> {n.kryteria}</p>
-          <p className="text-[15px] text-muted"><strong className="text-ink">Obszary:</strong> {n.obszary.map((o) => obszarPoId(o)?.nazwa).join(', ')}</p>
           {n.wzor && <div><WzorWniosku nabor={n} /></div>}
           <div className="border-t border-line pt-3">
             <p className="font-bold mb-2">Z której fiszki przygotować wniosek?</p>
@@ -94,7 +92,7 @@ function WyborNaboru({ nabory }) {
 function KreatorFiszki() {
   const [params] = useSearchParams()
   const [krok, setKrok] = useState(1)
-  // Opis z wyszukiwarki (?problem=) i obszar ze strony obszaru (?obszar=) wypełniają się same
+  // Opis z wyszukiwarki (?problem=) wypełnia się sam
   const [fiszka, setFiszka] = useState({ ...PUSTA, problem: params.get('problem') || '' })
   const { dodajFiszke } = useDane()
   const { uzytkownik } = useAuth()
@@ -113,7 +111,6 @@ function KreatorFiszki() {
   }[krok]
 
   function wyslij() {
-    const tekst = [fiszka.problem, fiszka.opis, fiszka.istota, fiszka.grupaInna, ...fiszka.grupy].join(' ').toLowerCase()
     dodajFiszke({
       ...fiszka,
       problem: fiszka.problem.trim(),
@@ -121,9 +118,6 @@ function KreatorFiszki() {
       opis: fiszka.opis.trim(),
       istota: fiszka.istota.trim(),
       grupaInna: fiszka.grupaInna.trim(),
-      powiat: uzytkownik.powiat || '',
-      // słowa kluczowe dla prostego matchingu – docelowo liczy je serwis AI
-      slowa: [...new Set([...tekst.split(/[^a-ząćęłńóśźż]+/).filter((s) => s.length > 4), ...fiszka.grupy])],
       autorId: uzytkownik.id,
       autor: uzytkownik.imie,
     })
@@ -229,7 +223,7 @@ function KreatorFiszki() {
         <div className="mt-8 flex flex-wrap gap-4 items-center bg-ink text-white rounded-2xl p-5">
           <p className="flex-[999_1_300px] text-base">
             <strong className="block">Co dalej z fiszką?</strong>
-            Po zatwierdzeniu przez ROPS zobaczą ją wszyscy. Gdy ROPS ogłosi pasujący nabór, w „Moich sprawach” pojawi się przycisk „Przygotuj wniosek” — wtedy rozpiszesz pomysł na Canvie innowacji.
+            Po zatwierdzeniu przez ROPS zobaczą ją wszyscy. Gdy ROPS ogłosi nabór, w „Moich sprawach” pojawi się przycisk „Przygotuj wniosek” — wtedy rozpiszesz pomysł na Canvie innowacji.
           </p>
           <Link to="/panel" className="min-h-12 px-5 inline-flex items-center rounded-xl bg-white text-ink font-bold no-underline">
             Moje sprawy

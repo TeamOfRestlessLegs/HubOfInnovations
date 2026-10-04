@@ -18,10 +18,9 @@ export default function KartaInnowacji({ innowacja: f }) {
           <Link to={'/pomysl/' + f.id} className="text-ink no-underline hover:underline">{f.tytul}</Link>
         </h3>
         <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
-          <span>{f.powiat ? `pow. ${f.powiat}` : 'Małopolska'}</span>
-          {f.odJST && <span className="px-2 py-0.5 rounded bg-ink text-white text-xs font-bold">Pomysł gminy</span>}
+          {f.odJST && <span className="px-2 py-0.5 rounded bg-ink text-white text-xs font-bold">Pomysł gminy{f.prowadzacy?.powiat && ` · pow. ${f.prowadzacy.powiat}`}</span>}
           {f.prowadzacy && !f.odJST && <span className="px-2 py-0.5 rounded bg-ground text-ink text-xs font-bold">Prowadzi gmina</span>}
-          {f.szuka && <span className="px-2 py-0.5 rounded bg-clay-light text-clay-dark text-xs font-bold">Szuka: {f.szuka}</span>}
+          {[...(f.grupy || []), f.grupaInna].filter(Boolean).map((g) => <span key={g} className="px-2 py-0.5 rounded bg-teal-light text-teal-dark text-xs font-bold">{g}</span>)}
         </p>
         {f.problem && <p className="text-[15px] text-ink/80 line-clamp-2 max-w-3xl"><span className="font-bold text-ink">Problem: </span>{f.problem}</p>}
       </div>
