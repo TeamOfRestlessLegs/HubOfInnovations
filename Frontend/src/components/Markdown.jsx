@@ -50,11 +50,13 @@ function bloki(tekst) {
   return wynik.filter((b) => !(b.typ === 'h' && b.poziom === 1) && !(b.typ === 'q' && pierwszy && norm(b.tekst) === norm(pierwszy.tekst)))
 }
 
-export default function Markdown({ tekst }) {
+// duzy = pełna strona innowacji (większy tekst, nagłówki h2/h3); domyślnie zwarty podgląd w karcie (np. KartaRozwiazania).
+export default function Markdown({ tekst, duzy = false }) {
   return (
-    <div className="flex flex-col gap-3 text-lg leading-relaxed">
+    <div className={'flex flex-col leading-relaxed ' + (duzy ? 'gap-3 text-lg' : 'gap-2 text-[15px]')}>
       {bloki(tekst || '').map((b, i) => {
         if (b.typ === 'h') {
+          if (!duzy) return <h4 key={i} className="font-display font-bold text-lg mt-2"><Inline tekst={b.tekst.replace(/^\d+\.\s*/, '')} /></h4>
           return b.poziom === 2
             ? <h2 key={i} className="font-display font-bold text-2xl mt-3"><Inline tekst={b.tekst} /></h2>
             : <h3 key={i} className="font-display font-bold text-xl mt-2"><Inline tekst={b.tekst} /></h3>

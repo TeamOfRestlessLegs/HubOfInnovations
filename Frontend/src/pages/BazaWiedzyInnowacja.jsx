@@ -52,7 +52,7 @@ export default function BazaWiedzyInnowacja() {
             {inn.miejsce && <p className="text-muted mt-1">Wdrożone: {inn.miejsce}</p>}
           </header>
 
-          <Markdown tekst={inn.opis} />
+          <Markdown duzy tekst={inn.opis} />
 
           {inn.materialy.length > 0 && (
             <section aria-labelledby="h-mat">

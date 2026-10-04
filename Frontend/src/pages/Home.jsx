@@ -69,7 +69,7 @@ export default function Home() {
           <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-5">
             <KartaRoli to="/szukaj" tytul="Mieszkaniec lub NGO" link="Opisz problem →"
               opis="Masz problem w okolicy albo pomysł, jak coś zmienić. Znajdź gotowe rozwiązania i ludzi, którzy Cię poprą." />
-            <KartaRoli to="/zasobnik" tytul="Samorząd (JST)" link="Przeglądaj innowacje →"
+            <KartaRoli to="/szukaj" tytul="Samorząd (JST)" link="Znajdź rozwiązanie →"
               opis="Szukasz sprawdzonej usługi dla mieszkańców. Zobacz, co działa w innych gminach Małopolski." />
             <KartaRoli to="/kreator" tytul="Innowator" link="Otwórz Kreator →" akcent
               opis="Masz pomysł na innowację społeczną. Zbuduj fiszkę, zbierz poparcie i złóż wniosek w naborze." />

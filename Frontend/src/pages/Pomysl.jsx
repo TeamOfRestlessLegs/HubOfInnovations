@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth, ROLE } from '../auth/AuthContext.jsx'
 import { useDane } from '../data/DaneContext.jsx'
 import { naborOtwarty } from '../data/nabory.js'
-import { liczbaPoparc, prowadzi } from '../data/watekFiszki.js'
+import { liczbaPoparc, prowadzi, uczestniczy } from '../data/watekFiszki.js'
 import { kiedy } from '../data/czas.js'
 import SzczegolyFiszki from '../components/SzczegolyFiszki.jsx'
 import PasekEtapu from '../components/PasekEtapu.jsx'
@@ -34,7 +34,7 @@ export default function Pomysl() {
   if (!f) return <Brak tekst="Nie ma takiego pomysłu." />
   // Publiczny wątek widzą wszyscy; przed poparciem – tylko prowadzący, ROPS i eksperci
   const zarzadza = ja?.rola === 'rops_admin' || ja?.rola === 'ekspert'
-  if (f.status !== 'opublikowana' && !prowadzi(f, ja) && !zarzadza) return <Brak tekst={f.status === 'odrzucona' ? 'Ten pomysł został usunięty przez ROPS.' : 'Ten pomysł jeszcze nie jest publiczny – czeka na poparcie ROPS albo eksperta.'} />
+  if (f.status !== 'opublikowana' && !uczestniczy(f, ja) && !zarzadza) return <Brak tekst={f.status === 'odrzucona' ? 'Ten pomysł został usunięty przez ROPS.' : 'Ten pomysł jeszcze nie jest publiczny – czeka na poparcie ROPS albo eksperta.'} />
 
   const edycja = params.has('edycja')
   // Odrzucony przez ROPS albo zarchiwizowany = wątek zamknięty (tylko do odczytu)
@@ -73,12 +73,13 @@ export default function Pomysl() {
       </div>
       <section aria-labelledby="h-o" className="bg-white border border-line rounded-2xl p-6 flex flex-col gap-4 mb-8">
         <h2 id="h-o" className="font-display font-bold text-2xl">O pomyśle</h2>
-        {f.autorId === ja?.id && !zakonczona && edycja ? (
+        {mojProwadzony && !zakonczona && edycja ? (
           <EdycjaFiszki f={f} onKoniec={() => setParams((p) => { p.delete('edycja'); return p }, { replace: true })} />
         ) : (
           <>
             <SzczegolyFiszki fiszka={f} />
-            {f.autorId === ja?.id && !zakonczona && (
+            <ZmianaEtapu f={f} ja={ja} />
+            {mojProwadzony && !zakonczona && (
               <button type="button" onClick={() => setParams((p) => { p.set('edycja', '1'); return p }, { replace: true })}
                 className={'self-start min-h-11 px-4 rounded-lg font-bold ' + (f.status === 'do_poprawy' ? 'bg-ink text-white' : 'border-2 border-line')}>
                 {f.status === 'do_poprawy' ? 'Wprowadź poprawki' : 'Edytuj fiszkę'}
@@ -129,11 +130,11 @@ function Naglowek({ f, ja, miejsce }) {
       <div className="max-w-3xl flex flex-col gap-2">
         <div className="flex flex-wrap gap-2">
           {f.status !== 'opublikowana' && <StatusWpisu status={f.status} />}
-          {f.odJST && <span className="px-2.5 py-0.5 rounded-full bg-ink text-white font-bold text-sm">Pomysł gminy · pow. {f.prowadzacy?.powiat || f.powiat}</span>}
+          {f.odJST && <span className="px-2.5 py-0.5 rounded-full bg-ink text-white font-bold text-sm">Pomysł gminy{f.prowadzacy?.powiat && ` · pow. ${f.prowadzacy.powiat}`}</span>}
           {f.prowadzacy && !f.odJST && <span className="px-2.5 py-0.5 rounded-full bg-clay-light text-clay-dark font-bold text-sm">Prowadzi gmina · pow. {f.prowadzacy.powiat}</span>}
         </div>
         <h1 className="font-display font-extrabold text-4xl sm:text-5xl tracking-tight">{f.tytul}</h1>
-        <p className="text-muted">{f.odJST ? 'Zgłosiła gmina' : 'Pomysłodawca'}: <strong className="text-ink">{f.autor}</strong>{f.powiat && ` · pow. ${f.powiat}`}</p>
+        <p className="text-muted">{f.odJST ? 'Zgłosiła gmina' : 'Pomysłodawca'}: <strong className="text-ink">{f.autor}</strong></p>
         <div className="max-w-md mt-1"><PasekEtapu etap={f.etap} /></div>
       </div>
       <div className="flex flex-col items-start lg:items-end gap-2">
@@ -230,36 +231,54 @@ function EdycjaFiszki({ f, onKoniec }) {
 }
 
 // Gmina chce przejąć pomysł – decyduje autor
+// Prośby gmin o przejęcie: autor wybiera jedną (przejęcie jest ostateczne), gmina widzi stan swojej prośby
 function ProsbaPrzejecia({ f, ja }) {
-  const { decyzjaPrzejecia } = useDane()
-  const p = f.prosbaPrzejecia
-  if (!p || !ja) return null
-  if (ja.id === f.autorId) {
+  const { przejecia, decyzjaPrzejecia, wycofajPrzejecie } = useDane()
+  if (!ja || f.prowadzacy) return null
+  const czekajace = przejecia.filter((p) => p.fiszkaId === f.id && p.status === 'czeka')
+  if (ja.id === f.autorId && czekajace.length) {
     return (
-      <div role="region" aria-label="Prośba o przejęcie" className="rounded-2xl border-2 border-clay bg-clay-light p-5 flex flex-col gap-3">
-        <p><strong>Gmina (pow. {p.powiat}, {p.imie}) chce poprowadzić Twój pomysł.</strong> Zostajesz w wątku jako pomysłodawca, a gmina może składać wnioski i publikować aktualności.</p>
-        {p.wiadomosc && <p className="italic">„{p.wiadomosc}”</p>}
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => decyzjaPrzejecia(f.id, true)} className="min-h-11 px-5 rounded-lg bg-clay text-white font-bold">Zgadzam się</button>
-          <button type="button" onClick={() => decyzjaPrzejecia(f.id, false)} className="min-h-11 px-5 rounded-lg border-2 border-clay-dark text-clay-dark font-bold">Nie zgadzam się</button>
-        </div>
+      <section aria-label="Prośby o przejęcie" className="rounded-2xl border-2 border-clay bg-clay-light p-5 flex flex-col gap-3">
+        <p className="font-bold">{czekajace.length === 1 ? 'Gmina chce poprowadzić Twój pomysł.' : `${czekajace.length} gminy chcą poprowadzić Twój pomysł – możesz wybrać jedną.`}</p>
+        <p className="text-[15px]">Po zgodzie gmina przejmuje prowadzenie na stałe: edytuje fiszkę, zmienia etap, składa wnioski do naborów i publikuje oficjalne informacje. Ty zostajesz w wątku jako pomysłodawca.</p>
+        {czekajace.map((p) => (
+          <div key={p.id} className="rounded-xl bg-white p-4 flex flex-col gap-2">
+            <p><strong>{p.imie}</strong> · pow. {p.powiat} <span className="text-sm text-muted">· {kiedy(p.data)}</span></p>
+            {p.wiadomosc && <p className="italic">„{p.wiadomosc}”</p>}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => decyzjaPrzejecia(p.id, true)} className="min-h-11 px-5 rounded-lg bg-clay text-white font-bold">Zgadzam się</button>
+              <button type="button" onClick={() => decyzjaPrzejecia(p.id, false)} className="min-h-11 px-5 rounded-lg border-2 border-clay-dark text-clay-dark font-bold">Nie zgadzam się</button>
+            </div>
+          </div>
+        ))}
+      </section>
+    )
+  }
+  const moja = czekajace.find((p) => p.gminaId === ja.id)
+  if (moja) {
+    return (
+      <div role="status" className="rounded-2xl bg-clay-light p-4 flex flex-wrap items-center justify-between gap-3">
+        <span className="font-bold text-clay-dark">Prośba o przejęcie wysłana {kiedy(moja.data)} – czekacie na decyzję autora.</span>
+        <button type="button" onClick={() => wycofajPrzejecie(moja.id)} className="min-h-11 px-4 rounded-lg border-2 border-clay-dark text-clay-dark font-bold bg-white">Wycofaj prośbę</button>
       </div>
     )
   }
-  if (ja.id === p.id) return <p role="status" className="rounded-2xl bg-clay-light p-4 font-bold text-clay-dark">Prośba o przejęcie wysłana – czekacie na decyzję autora.</p>
   return null
 }
 
 function PrzejmijJakoGmina({ f, ja }) {
-  const { poprosOPrzejecie } = useDane()
+  const { przejecia, poprosOPrzejecie } = useDane()
   const [otwarte, setOtwarte] = useState(false)
   const [wiadomosc, setWiadomosc] = useState('')
-  if (ja?.rola !== 'jst' || f.status !== 'opublikowana' || f.prowadzacy || f.prosbaPrzejecia || f.autorId === ja.id) return null
+  if (ja?.rola !== 'jst' || f.status !== 'opublikowana' || f.prowadzacy || f.autorId === ja.id) return null
+  if (przejecia.some((p) => p.fiszkaId === f.id && p.gminaId === ja.id && p.status === 'czeka')) return null
+  const wczesniej = przejecia.find((p) => p.fiszkaId === f.id && p.gminaId === ja.id && p.status === 'odrzucona')
   return (
     <div className="rounded-2xl border border-line bg-white p-5 flex flex-col gap-3">
-      <p><strong>Chcecie wdrożyć ten pomysł w gminie?</strong> Poproś autora o przejęcie prowadzenia. Autor zostaje pomysłodawcą.</p>
+      <p><strong>Chcecie wdrożyć ten pomysł w gminie?</strong> Poproś autora o przejęcie prowadzenia. Przejęcie jest na stałe – autor zostaje pomysłodawcą, a Wy prowadzicie wątek.</p>
+      {wczesniej && <p className="text-[15px] text-muted">Autor nie zgodził się na Waszą wcześniejszą prośbę ({kiedy(wczesniej.decyzja)}).</p>}
       {otwarte ? (
-        <form onSubmit={(e) => { e.preventDefault(); poprosOPrzejecie(f.id, wiadomosc.trim()) }} className="flex flex-col gap-2">
+        <form onSubmit={(e) => { e.preventDefault(); poprosOPrzejecie(f.id, wiadomosc.trim()); setOtwarte(false) }} className="flex flex-col gap-2">
           <label htmlFor="przejecie" className="font-bold">Wiadomość do autora</label>
           <textarea id="przejecie" rows={2} value={wiadomosc} onChange={(e) => setWiadomosc(e.target.value)} placeholder="Np. mamy lokal i budżet, chcemy uruchomić to w 3 sołectwach." className="p-3 rounded-xl border border-[#B8C2D0]" />
           <div className="flex gap-2">
@@ -271,6 +290,24 @@ function PrzejmijJakoGmina({ f, ja }) {
         <button type="button" onClick={() => setOtwarte(true)} className="self-start min-h-11 px-5 rounded-lg border-2 border-ink font-bold">Przejmij jako gmina</button>
       )}
     </div>
+  )
+}
+
+// Gmina prowadząca sama zmienia etap swojego pomysłu (ROPS robi to w swoim panelu)
+function ZmianaEtapu({ f, ja }) {
+  const { ustawEtap } = useDane()
+  const [etap, setEtap] = useState(f.etap)
+  if (ja?.rola !== 'jst' || f.prowadzacy?.id !== ja.id || f.status !== 'opublikowana') return null
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); ustawEtap(f.id, etap) }} className="flex flex-wrap items-end gap-2 rounded-xl bg-ground p-4">
+      <label className="flex flex-col gap-1 font-bold text-[15px]">
+        Etap projektu (prowadzicie ten pomysł)
+        <select value={etap} onChange={(e) => setEtap(Number(e.target.value))} className="min-h-11 px-3 rounded-lg border border-[#B8C2D0] bg-white font-normal">
+          {ETAPY.map((x) => <option key={x.nr} value={x.nr}>{x.nr} · {x.nazwa}</option>)}
+        </select>
+      </label>
+      <button type="submit" disabled={etap === f.etap} className="min-h-11 px-4 rounded-lg bg-ink text-white font-bold disabled:opacity-50">Zmień etap</button>
+    </form>
   )
 }
 
